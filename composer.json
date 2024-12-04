@@ -1,0 +1,20 @@
+{
+    "name": "real-coder-pty-ltd/proptrack",
+    "description": "Integrate PropTrack's API with WordPress.",
+    "type": "wordpress-plugin",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "RealCoderPtyLtd\\Proptrack\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Matthew Neal",
+            "email": "matt.neal@stafflink.com.au"
+        }
+    ],
+    "require": {
+        "laravel/pint": "^1.18"
+    }
+}
