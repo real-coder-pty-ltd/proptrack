@@ -1,12 +1,8 @@
 <?php
-
 /**
  * The public-facing functionality of the plugin.
  */
-// Exit if accessed directly.
-if (! defined('ABSPATH')) {
-    exit;
-}
+namespace RealCoder;
 
 class PropTrackPublic
 {

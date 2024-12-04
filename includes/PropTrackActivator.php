@@ -2,6 +2,7 @@
 /**
  * PropTrack Activation Class.
  */
+namespace RealCoder;
 
 class PropTrackActivator
 {

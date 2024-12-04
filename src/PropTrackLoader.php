@@ -6,6 +6,8 @@
  * the plugin, and register them with the WordPress API. Call the
  * run function to execute the list of actions and filters.
  */
+namespace RealCoder;
+
 class PropTrackLoader
 {
     protected $actions;

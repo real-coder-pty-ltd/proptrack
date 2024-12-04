@@ -2,12 +2,14 @@
 /**
  * Class Boundary Fetcher
  */
+namespace RealCoder;
+
 // Exit if accessed directly.
 if (! defined('ABSPATH')) {
     exit;
 }
 
-class Boundary_Fetcher
+class BoundaryFetcher
 {
     private $country;
 

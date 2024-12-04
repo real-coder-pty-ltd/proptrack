@@ -9,7 +9,7 @@ if (! defined('ABSPATH')) {
 
 function registerPropTrackSettings()
 {
-    add_submenu_page('tools.php', 'PropTrack Settings', 'PropTrack Settings', 'manage_options', 'proptrack', 'addProptrackSettings');
+    add_submenu_page('options-general.php', 'PropTrack Settings', 'PropTrack Settings', 'manage_options', 'proptrack', 'addProptrackSettings');
 }
 
 function addProptrackSettings()

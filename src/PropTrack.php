@@ -6,6 +6,8 @@
  * public-facing site hooks.
  *
  */
+namespace RealCoder;
+
 class PropTrack
 {
     protected $loader;

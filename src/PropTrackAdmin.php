@@ -2,6 +2,8 @@
 /**
  * The admin-specific functionality of the plugin.
  */
+namespace RealCoder;
+
 class PropTrackAdmin
 {
     private $plugin_name;

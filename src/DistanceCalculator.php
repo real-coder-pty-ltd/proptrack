@@ -1,4 +1,8 @@
 <?php
+/**
+ * Class DistanceCalculator
+ */
+namespace RealCoder;
 
 class DistanceCalculator
 {

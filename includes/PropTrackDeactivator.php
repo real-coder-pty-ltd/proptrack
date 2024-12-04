@@ -2,10 +2,7 @@
 /**
  * Fired during plugin deactivation
  */
-// Exit if accessed directly.
-if (! defined('ABSPATH')) {
-    exit;
-}
+namespace RealCoder;
 
 class PropTrackDeactivator
 {
