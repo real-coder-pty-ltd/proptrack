@@ -31,7 +31,7 @@ class PropTrackPublic
 
         $enqueue_google_maps = get_option('proptrack_enqueue_google_maps');
         if ($enqueue_google_maps) {
-            wp_enqueue_script('google-maps', 'https://maps.googleapis.com/maps/api/js?key='.get_option('proptrack_google_maps_api_key').'&amp;libraries=places', [], $this->version, false);
+            wp_enqueue_script('google-maps', 'https://maps.googleapis.com/maps/api/js?key='.get_option('proptrack_gmaps_api_key').'&amp;libraries=places', [], $this->version, false);
         }
     }
 }
