@@ -63,6 +63,8 @@ class BaseClient
 
         $data = json_decode($responseBody, true);
 
+        error_log(print_r($data, true));    
+
         if (json_last_error() !== JSON_ERROR_NONE) {
             throw new \Exception('Failed to decode JSON response: ' . json_last_error_msg());
         }

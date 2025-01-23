@@ -113,6 +113,7 @@ function PropTrackSuburbDescription(string $suburb, string $state, $username): s
 
     // Historic Sale Data
     try {
+        error_log('trying new client market');
         $client = new MarketClient;
         $params = [
             'suburb' => $suburb,
@@ -121,7 +122,7 @@ function PropTrackSuburbDescription(string $suburb, string $state, $username): s
             'propertyTypes' => ['house', 'unit'],
         ];
         $historicSaleData = $client->getHistoricMarketData('sale', 'median-sale-price', $params);
-
+        error_log( print_r($historicSaleData), true);
     } catch (\Exception $e) {
         error_log('Error fetching historic sale data: '.$e->getMessage());
     }
@@ -212,4 +213,51 @@ function PropTrackSuburbDescription(string $suburb, string $state, $username): s
     );
 
     return $text;
+}
+
+function PropTrackMarketInsights($suburb, $state, $username): array
+{
+    $postcode = fetchPostcode($suburb, $state, $username);
+    $client = new MarketClient();
+
+    // We'll accumulate all 4 years of data in this array
+    $historicSaleData = [];
+
+    // Loop over the last 4 years
+    // For clarity, we'll go from oldest (4 years ago) to newest (1 year ago).
+    for ($i = 4; $i > 0; $i--) {
+
+        // For i = 4 => covers "4 years ago" to "3 years + 1 day ago"
+        // For i = 3 => covers "3 years ago" to "2 years + 1 day ago", etc.
+        $start = (new DateTime('first day of last month'))
+            ->modify("-{$i} years");
+        $end = (clone $start)
+            ->modify('+1 year -1 day');
+
+        // Build the params for this specific 1-year block
+        $params = [
+            'suburb'        => $suburb,
+            'postcode'      => $postcode,
+            'state'         => $state,
+            'propertyTypes' => ['house'],
+            'frequency'     => 'monthly',
+            'start_date'    => $start->format('Y-m-d'),
+            'end_date'      => $end->format('Y-m-d'),
+        ];
+
+        error_log('Fetching data from ' . $params['start_date'] . ' to ' . $params['end_date']);
+
+        try {
+            // Call the API for this one-year period
+            $yearData = $client->getHistoricMarketData('sale', 'median-sale-price', $params);
+
+            // Merge results into our main array
+            // Note: This assumes the endpoint returns an array of data that can be merged
+            $historicSaleData = array_merge($historicSaleData, $yearData);
+        } catch (\Exception $e) {
+            error_log('Error fetching historic sale data for year block: ' . $e->getMessage());
+        }
+    }
+
+    return $historicSaleData;
 }
