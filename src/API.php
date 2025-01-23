@@ -1,8 +1,8 @@
 <?php
 
-namespace RealCoder;
+namespace RealCoder\PropTrack;
 
-class PropTrackAPI
+class API
 {
     private $clientId;
     private $clientSecret;

@@ -67,14 +67,25 @@ function PropTrackSuburbDescription(string $suburb, string $state, $username): s
     } catch (\Exception $e) {
         error_log('Error fetching supply and demand data: '.$e->getMessage());
     }
-
-    // dd($rentalYield);
     $house_median_rental_yield = last($rentalYield[0]['dateRanges'])['metricValues'][0]['value'];
     $unit_median_rental_yield = last($rentalYield[1]['dateRanges'])['metricValues'][0]['value'];
+
     // Convert rental yield to percentage with 2 decimal places like this: 5.67%
     $house_median_rental_yield = number_format($house_median_rental_yield * 100, 2).'%';
     $unit_median_rental_yield = number_format($unit_median_rental_yield * 100, 2).'%';
 
+    $rentalValue = $client->getHistoricMarketData('rent', 'median-rental-price', $params);
+
+    // dd($rentalValue);
+    // Average house rental amount per week
+    $rent_house_year = $rentalValue[0]['dateRanges'][0]['metricValues'];
+    $rent_house_year = end($rent_house_year)['value'];
+    $rent_house_year = '$' . number_format($rent_house_year, 0, '.', ',');
+
+    // Average unit rental amount per week
+    $rent_unit_year = $rentalValue[1]['dateRanges'][0]['metricValues'];
+    $rent_unit_year = end($rent_unit_year)['value'];
+    $rent_unit_year = '$' . number_format($rent_unit_year, 0, '.', ',');
 
     // Buy Data
     try {
@@ -115,17 +126,76 @@ function PropTrackSuburbDescription(string $suburb, string $state, $username): s
         error_log('Error fetching historic sale data: '.$e->getMessage());
     }
 
-    $medianHousePrice = $historicSaleData[0]['dateRanges'][0]['metricValues'][0]['value'];
-    $medianUnitPrice = $historicSaleData[1]['dateRanges'][0]['metricValues'][0]['value'];
+    // Median Price
+    $medianHousePrice = (int) $historicSaleData[0]['dateRanges'][0]['metricValues'][0]['value'];
+    $medianUnitPrice = (int) $historicSaleData[1]['dateRanges'][0]['metricValues'][0]['value'];
 
-    // Growth Rate
-    $houseGrowthRate = ($historicSaleData[0]['dateRanges'][0]['metricValues'][0]['value'] - $historicSaleData[0]['dateRanges'][1]['metricValues'][0]['value']) / $historicSaleData[0]['dateRanges'][1]['metricValues'][0]['value'];
-    $unitGrowthRate = ($historicSaleData[1]['dateRanges'][0]['metricValues'][0]['value'] - $historicSaleData[1]['dateRanges'][1]['metricValues'][0]['value']) / $historicSaleData[1]['dateRanges'][1]['metricValues'][0]['value'];
+    $medianHousePrice = '$' . number_format($medianHousePrice, 0, '.', ',');
+    $medianUnitPrice = '$' . number_format($medianUnitPrice, 0, '.', ',');
 
-    $text = sprintf('Last month <span>%s</span> had <span>%d</span> properties available for rent and <span>%d</span> properties for sale. '.
-        'Median property prices over the last year range from <span>%s</span> for houses to <span>%s</span> for units. '.
-        "If you are looking for an investment property, consider houses in %s rent out for <span>%s</span> with an annual rental yield of <span>%s</span> " .
-        "and units rent for <span>%s</span> with a rental yield of <span>%s</span>. <span>%s</span> has seen an annual compound growth rate of <span>%s</span> for houses and <span>%s</span> for units.",
+    // "This Year": last 12 months up to now
+    $endDateThisYear   = new DateTime(); // today
+    $startDateThisYear = (clone $endDateThisYear)->modify('-12 months');
+
+    // "Last Year": the 12 months before that
+    $endDateLastYear   = (clone $startDateThisYear);
+    $startDateLastYear = (clone $endDateLastYear)->modify('-12 months');
+
+    try {
+        $client = new MarketClient();
+        
+        // Params for "This Year" (past 12 months)
+        $paramsThisYear = [
+            'suburb'        => $suburb,
+            'state'         => $state,
+            'postcode'      => $postcode,
+            'propertyTypes' => ['house', 'unit'],
+            'startDate'     => $startDateThisYear->format('Y-m-d'),
+            'endDate'       => $endDateThisYear->format('Y-m-d'),
+        ];
+        
+        // Params for "Last Year" (the 12 months prior to that)
+        $paramsLastYear = [
+            'suburb'        => $suburb,
+            'state'         => $state,
+            'postcode'      => $postcode,
+            'propertyTypes' => ['house', 'unit'],
+            'startDate'     => $startDateLastYear->format('Y-m-d'),
+            'endDate'       => $endDateLastYear->format('Y-m-d'),
+        ];
+    
+        // Fetch data for both periods
+        $historicSaleDataThisYear = $client->getHistoricMarketData('sale', 'median-sale-price', $paramsThisYear);
+        $historicSaleDataLastYear = $client->getHistoricMarketData('sale', 'median-sale-price', $paramsLastYear);
+    
+    } catch (\Exception $e) {
+        error_log('Error fetching historic sale data: ' . $e->getMessage());
+    }
+
+    $sales_house_average_this_year = $historicSaleDataThisYear[0]['dateRanges'][0]['metricValues'];
+    $sales_house_average_this_year = end($sales_house_average_this_year)['value'];
+
+    $sales_house_average_last_year = $historicSaleDataLastYear[0]['dateRanges'][0]['metricValues'];
+    $sales_house_average_last_year = end($sales_house_average_last_year)['value'];
+
+    $growthRate = ($sales_house_average_this_year - $sales_house_average_last_year) / $sales_house_average_last_year * 100; 
+
+    $growthRate = number_format($growthRate, 2, '.', '',) . '%';
+
+    $sales_unit_average_this_year = $historicSaleDataThisYear[1]['dateRanges'][0]['metricValues'];
+    $sales_unit_average_this_year = end($sales_unit_average_this_year)['value'];
+
+    $sales_unit_average_last_year = $historicSaleDataLastYear[1]['dateRanges'][0]['metricValues'];
+    $sales_unit_average_last_year = end($sales_unit_average_last_year)['value'];
+
+    $unitGrowthRate = ($sales_unit_average_this_year - $sales_unit_average_last_year) / $sales_unit_average_last_year * 100;
+
+    $unitGrowthRate = number_format($unitGrowthRate, 2, '.', '',) . '%';
+
+    $text = sprintf('Last month <strong>%s</strong> had <strong>%d</strong> properties available for rent and <strong>%d</strong> properties for sale. '.
+        'Median property prices over the last year range from <strong>%s</strong> for houses to <strong>%s</strong> for units. '.
+        "If you are looking for an investment property, consider houses in <strong>%s</strong> rent out for <strong>%s</strong> with an annual rental yield of <strong>%s</strong> " .
+        "and units rent for <strong>%s</strong> with a rental yield of <strong>%s</strong>. <strong>%s</strong> has seen an annual compound growth rate of <strong>%s</strong> for houses and <strong>%s</strong> for units.",
         $suburb,
         $rent_last_month_supply_total,
         $buy_last_month_supply_total,
@@ -137,7 +207,7 @@ function PropTrackSuburbDescription(string $suburb, string $state, $username): s
         $rent_unit_year,
         $unit_median_rental_yield,
         $suburb,
-        $houseGrowthRate,
+        $growthRate,
         $unitGrowthRate
     );
 
