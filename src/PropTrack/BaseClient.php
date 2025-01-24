@@ -28,6 +28,7 @@ class BaseClient
         // Check if cached data exists
         $cachedData = $this->getCachedData($cacheKey);
         if ($cachedData !== false) {
+            error_log('Using cached data for: ' . $cacheKey);
             return $cachedData;
         }
 
@@ -63,7 +64,7 @@ class BaseClient
 
         $data = json_decode($responseBody, true);
 
-        error_log(print_r($data, true));    
+        // error_log(print_r($data, true));    
 
         if (json_last_error() !== JSON_ERROR_NONE) {
             throw new \Exception('Failed to decode JSON response: ' . json_last_error_msg());
@@ -160,6 +161,8 @@ class BaseClient
         } else {
             $cache = get_transient($cacheKey);
         }
+
+        // error_log(print_r($cache, true));
 
         if ($cache) {
             $cacheData = maybe_unserialize($cache);

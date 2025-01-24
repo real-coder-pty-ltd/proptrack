@@ -43,6 +43,7 @@ function PropTrackSuburbDescription(string $suburb, string $state, $username): s
 
     } catch (\Exception $e) {
         error_log('Error fetching supply and demand data: '.$e->getMessage());
+        return 'Error fetching supply and demand data: '.$e->getMessage();
     }
 
     $rent_last_month_supply_house = last(last($rent[0]['dateRanges'])['metricValues'])['supply'];
@@ -66,6 +67,7 @@ function PropTrackSuburbDescription(string $suburb, string $state, $username): s
 
     } catch (\Exception $e) {
         error_log('Error fetching supply and demand data: '.$e->getMessage());
+        return 'Error fetching supply and demand data: '.$e->getMessage();
     }
     $house_median_rental_yield = last($rentalYield[0]['dateRanges'])['metricValues'][0]['value'];
     $unit_median_rental_yield = last($rentalYield[1]['dateRanges'])['metricValues'][0]['value'];
@@ -104,6 +106,7 @@ function PropTrackSuburbDescription(string $suburb, string $state, $username): s
 
     } catch (\Exception $e) {
         error_log('Error fetching supply and demand data: '.$e->getMessage());
+        return 'Error fetching supply and demand data: '.$e->getMessage();
     }
 
     // Buy 
@@ -113,7 +116,6 @@ function PropTrackSuburbDescription(string $suburb, string $state, $username): s
 
     // Historic Sale Data
     try {
-        error_log('trying new client market');
         $client = new MarketClient;
         $params = [
             'suburb' => $suburb,
@@ -122,9 +124,10 @@ function PropTrackSuburbDescription(string $suburb, string $state, $username): s
             'propertyTypes' => ['house', 'unit'],
         ];
         $historicSaleData = $client->getHistoricMarketData('sale', 'median-sale-price', $params);
-        error_log( print_r($historicSaleData), true);
+
     } catch (\Exception $e) {
         error_log('Error fetching historic sale data: '.$e->getMessage());
+        return 'Error fetching historic sale data: '.$e->getMessage();
     }
 
     // Median Price
@@ -171,6 +174,7 @@ function PropTrackSuburbDescription(string $suburb, string $state, $username): s
     
     } catch (\Exception $e) {
         error_log('Error fetching historic sale data: ' . $e->getMessage());
+        return 'Error fetching historic sale data: ' . $e->getMessage();
     }
 
     $sales_house_average_this_year = $historicSaleDataThisYear[0]['dateRanges'][0]['metricValues'];
@@ -220,44 +224,56 @@ function PropTrackMarketInsights($suburb, $state, $username): array
     $postcode = fetchPostcode($suburb, $state, $username);
     $client = new MarketClient();
 
-    // We'll accumulate all 4 years of data in this array
     $historicSaleData = [];
+    $endOfLastMonth = new DateTime('last day of previous month');
 
-    // Loop over the last 4 years
-    // For clarity, we'll go from oldest (4 years ago) to newest (1 year ago).
-    for ($i = 4; $i > 0; $i--) {
+    // 2) We want four 1-year segments:
+    //    - Segment 1: 4 years ago -> 3 years ago
+    //    - Segment 2: 3 years ago -> 2 years ago
+    //    - Segment 3: 2 years ago -> 1 year ago
+    //    - Segment 4: 1 year ago -> "last day of previous month"
+    // 
+    // We'll loop from i=3 down to i=0 so that 
+    //   i=3 => covers the oldest block, 
+    //   i=0 => covers the newest block.
+    for ($i = 3; $i >= 0; $i--) {
 
-        // For i = 4 => covers "4 years ago" to "3 years + 1 day ago"
-        // For i = 3 => covers "3 years ago" to "2 years + 1 day ago", etc.
-        $start = (new DateTime('first day of last month'))
-            ->modify("-{$i} years");
-        $end = (clone $start)
-            ->modify('+1 year -1 day');
+        // The end date for this block is "X years before endOfLastMonth".
+        // Example: If i=3 and endOfLastMonth is 2024-12-31, blockEnd = 2021-12-31
+        $blockEnd = (clone $endOfLastMonth)->modify("-{$i} years");
 
-        // Build the params for this specific 1-year block
+        // The start date is exactly 1 year earlier (minus 1 year), plus 1 day
+        // so we don't overlap days between blocks.
+        // Example: If blockEnd is 2021-12-31, 
+        //          blockStart becomes 2020-01-01
+        $blockStart = (clone $blockEnd)->modify('-1 year +1 day');
+
+        // Build API params for this 1-year segment.
         $params = [
             'suburb'        => $suburb,
             'postcode'      => $postcode,
             'state'         => $state,
             'propertyTypes' => ['house'],
             'frequency'     => 'monthly',
-            'start_date'    => $start->format('Y-m-d'),
-            'end_date'      => $end->format('Y-m-d'),
+            'start_date'    => $blockStart->format('Y-m-d'),
+            'end_date'      => $blockEnd->format('Y-m-d'),
         ];
 
-        error_log('Fetching data from ' . $params['start_date'] . ' to ' . $params['end_date']);
+        error_log("Fetching data from {$params['start_date']} to {$params['end_date']}");
 
         try {
-            // Call the API for this one-year period
+            // Each call should fetch up to 12 months of data (the API’s max 1-year limit).
             $yearData = $client->getHistoricMarketData('sale', 'median-sale-price', $params);
 
-            // Merge results into our main array
-            // Note: This assumes the endpoint returns an array of data that can be merged
+            // Merge these 12 months of data into our overall array.
+            // Adjust merging logic if the API returns objects or differently shaped data.
             $historicSaleData = array_merge($historicSaleData, $yearData);
+
         } catch (\Exception $e) {
-            error_log('Error fetching historic sale data for year block: ' . $e->getMessage());
+            error_log('Error fetching historic sale data for this 1-year block: ' . $e->getMessage());
         }
     }
 
+    // After looping, $historicSaleData should contain 4 years of monthly data.
     return $historicSaleData;
 }
