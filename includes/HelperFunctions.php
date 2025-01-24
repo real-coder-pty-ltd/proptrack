@@ -219,36 +219,35 @@ function PropTrackSuburbDescription(string $suburb, string $state, $username): s
     return $text;
 }
 
-function PropTrackMarketInsights($suburb, $state, $username): array
+function PropTrackMonthlySnapshots($suburb, $state, $username): array
 {
     $postcode = fetchPostcode($suburb, $state, $username);
     $client = new MarketClient();
 
-    $historicSaleData = [];
-    $endOfLastMonth = new DateTime('last day of previous month');
+    // Prepare a structure for each bedroom category
+    $bedroomData = [
+        '1'        => ['labels' => [], 'values' => []],
+        '2'        => ['labels' => [], 'values' => []],
+        '3'        => ['labels' => [], 'values' => []],
+        '4'        => ['labels' => [], 'values' => []],
+        '5+'       => ['labels' => [], 'values' => []],
+        'combined' => ['labels' => [], 'values' => []],
+    ];
 
-    // 2) We want four 1-year segments:
-    //    - Segment 1: 4 years ago -> 3 years ago
-    //    - Segment 2: 3 years ago -> 2 years ago
-    //    - Segment 3: 2 years ago -> 1 year ago
-    //    - Segment 4: 1 year ago -> "last day of previous month"
-    // 
-    // We'll loop from i=3 down to i=0 so that 
-    //   i=3 => covers the oldest block, 
-    //   i=0 => covers the newest block.
-    for ($i = 3; $i >= 0; $i--) {
+    // Anchor: last day of previous month
+    // Example: if today = Jan 20, 2025 => anchor = Dec 31, 2024
+    $currentEnd = new DateTime('last day of previous month');
 
-        // The end date for this block is "X years before endOfLastMonth".
-        // Example: If i=3 and endOfLastMonth is 2024-12-31, blockEnd = 2021-12-31
-        $blockEnd = (clone $endOfLastMonth)->modify("-{$i} years");
+    // We'll do 4 calls, each capturing a distinct previous year
+    // We'll store them in ascending order, so we need an array for the partial results
+    $allBlocks = [];
 
-        // The start date is exactly 1 year earlier (minus 1 year), plus 1 day
-        // so we don't overlap days between blocks.
-        // Example: If blockEnd is 2021-12-31, 
-        //          blockStart becomes 2020-01-01
-        $blockStart = (clone $blockEnd)->modify('-1 year +1 day');
+    // for ($i = 0; $i < 4; $i++) {
+        // The 1-year block ends on $currentEnd
+        // The block start is exactly 1 year earlier (+1 day so it’s inclusive)
+        $blockStart = (clone $currentEnd)->modify('-1 year +1 day');
 
-        // Build API params for this 1-year segment.
+        // Prepare parameters
         $params = [
             'suburb'        => $suburb,
             'postcode'      => $postcode,
@@ -256,24 +255,60 @@ function PropTrackMarketInsights($suburb, $state, $username): array
             'propertyTypes' => ['house'],
             'frequency'     => 'monthly',
             'start_date'    => $blockStart->format('Y-m-d'),
-            'end_date'      => $blockEnd->format('Y-m-d'),
+            'end_date'      => $currentEnd->format('Y-m-d'),
         ];
+        // error_log(print_r($params, true));
 
-        error_log("Fetching data from {$params['start_date']} to {$params['end_date']}");
+        // error_log(sprintf(
+        //     "API Call #%d => %s to %s",
+        //     $i+1,
+        //     $params['start_date'],
+        //     $params['end_date']
+        // ));
 
         try {
-            // Each call should fetch up to 12 months of data (the API’s max 1-year limit).
+            // Fetch 12 "rolling monthly" dateRanges from the API
             $yearData = $client->getHistoricMarketData('sale', 'median-sale-price', $params);
+            // Store the raw year block so we can merge it after the loop
+            $allBlocks[] = $yearData;
 
-            // Merge these 12 months of data into our overall array.
-            // Adjust merging logic if the API returns objects or differently shaped data.
-            $historicSaleData = array_merge($historicSaleData, $yearData);
-
+            // error_log(print_r($yearData, true));
         } catch (\Exception $e) {
-            error_log('Error fetching historic sale data for this 1-year block: ' . $e->getMessage());
+            error_log("Error fetching monthly sale data (block #$i): " . $e->getMessage());
+        }
+
+        // Move currentEnd back 1 year for the next iteration
+        // e.g., from 2024-12-31 => 2023-12-31
+        $currentEnd = (clone $blockStart)->modify('-1 day'); 
+        // That means the next block will be the year prior to this block
+    // }
+
+    // Now we have 4 blocks in chronological DESC order (the last iteration is the oldest year).
+    // If you prefer ascending, we can reverse them:
+    $allBlocks = array_reverse($allBlocks);
+
+    // Parse the blocks from oldest to newest
+    foreach ($allBlocks as $yearBlock) {
+        // Each block is an array of property types, e.g. [ [ 'propertyType' => 'house', 'dateRanges' => [...]] ]
+        foreach ($yearBlock as $item) {
+            $dateRanges = $item['dateRanges'] ?? [];
+            foreach ($dateRanges as $range) {
+                // Each range => 'startDate' => ..., 'endDate' => ..., 'metricValues' => [...]
+                $endDate = $range['endDate']; 
+                $metrics = $range['metricValues'] ?? [];
+
+                foreach ($metrics as $metric) {
+                    $bedrooms = $metric['bedrooms'];
+                    $value    = $metric['value'];
+
+                    if (isset($bedroomData[$bedrooms])) {
+                        $bedroomData[$bedrooms]['labels'][] = $endDate;
+                        $bedroomData[$bedrooms]['values'][] = $value;
+                    }
+                }
+            }
         }
     }
 
-    // After looping, $historicSaleData should contain 4 years of monthly data.
-    return $historicSaleData;
+    return $bedroomData;
 }
