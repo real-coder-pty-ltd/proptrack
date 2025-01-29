@@ -78,7 +78,6 @@ function PropTrackSuburbDescription(string $suburb, string $state, $username): s
 
     $rentalValue = $client->getHistoricMarketData('rent', 'median-rental-price', $params);
 
-    // dd($rentalValue);
     // Average house rental amount per week
     $rent_house_year = $rentalValue[0]['dateRanges'][0]['metricValues'];
     $rent_house_year = end($rent_house_year)['value'];
@@ -222,6 +221,7 @@ function PropTrackSuburbDescription(string $suburb, string $state, $username): s
 function PropTrackMonthlySnapshots($suburb, $state, $username): array
 {
     $postcode = fetchPostcode($suburb, $state, $username);
+
     $client = new MarketClient();
 
     // Prepare a structure for each bedroom category
