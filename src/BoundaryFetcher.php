@@ -17,7 +17,7 @@ class BoundaryFetcher
 
     private $suburb;
 
-    private $url = 'https://overpass-api.de/api/interpreter';
+    public $url = 'https://overpass-api.de/api/interpreter';
 
     public $data;
 
@@ -29,6 +29,10 @@ class BoundaryFetcher
 
     public $post_id;
 
+    public $latitude;
+
+    public $longitude;
+
     public function __construct($suburb, $state = 'Queensland', $country = 'Australia', $post_id = null)
     {
         $this->country = $country;
@@ -36,7 +40,8 @@ class BoundaryFetcher
         $this->suburb = $suburb;
         $this->post_id = $post_id;
         $this->fetchBoundaryData();
-
+        $this->getLat();
+        $this->getLong();
         return $this;
     }
 
@@ -48,6 +53,7 @@ class BoundaryFetcher
 
         $lat = ($this->data[0]['bounds']['minlat'] + $this->data[0]['bounds']['maxlat']) / 2;
         if ($lat) {
+            $this->latitude = $lat;
             return $lat;
         }
 
@@ -62,6 +68,7 @@ class BoundaryFetcher
 
         $long = ($this->data[0]['bounds']['minlon'] + $this->data[0]['bounds']['maxlon']) / 2;
         if ($long) {
+            $this->longitude = $long;
             return $long;
         }
 
@@ -71,6 +78,10 @@ class BoundaryFetcher
     private function setCenter()
     {
         global $post;
+
+        if ($post === null) {
+            return;
+        }
 
         $post_id = $this->post_id ?? $post->ID;
 
@@ -139,6 +150,11 @@ EOT;
     public function stichPolygons()
     {
         global $post;
+
+        if ($post === null) {
+            return;
+        }
+
         $post_id = $this->post_id ?? $post->ID;
 
         $stitchedPolygon = [];

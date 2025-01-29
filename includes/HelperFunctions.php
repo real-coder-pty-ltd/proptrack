@@ -58,10 +58,8 @@ function PropTrackListings($query)
 /**
  * Shortcode to display the suburb description.
  */
-function PropTrackSuburbDescription(string $suburb, string $state, $username): string|array
+function PropTrackSuburbDescription(string $suburb, string $state, string $postcode): string|array
 {
-    $postcode = fetchPostcode($suburb, $state, $username);
-
     // Rent Data
     try {
         $client = new MarketClient;
@@ -259,9 +257,8 @@ function PropTrackSuburbDescription(string $suburb, string $state, $username): s
     return $text;
 }
 
-function PropTrackMonthlySnapshots($suburb, $state, $username): array
+function PropTrackMonthlySnapshots(string $suburb, string $state, $postcode): array
 {
-    $postcode = fetchPostcode($suburb, $state, $username);
     $client = new MarketClient;
 
     // Prepare a structure for each bedroom category
@@ -352,3 +349,10 @@ function PropTrackMonthlySnapshots($suburb, $state, $username): array
 
     return $bedroomData;
 }
+
+function PropTrackGetNearbySchools(string $suburb)
+{
+    $data = new RealCoder\LocalSchools($suburb);
+    return $data->localSchools;
+}
+
