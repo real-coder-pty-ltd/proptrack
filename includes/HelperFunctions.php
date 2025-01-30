@@ -350,9 +350,108 @@ function PropTrackMonthlySnapshots(string $suburb, string $state, $postcode): ar
     return $bedroomData;
 }
 
+function PropTrackSupplyandDemandData(string $suburb, string $state, $postcode, string $property_type, string $metric): array
+{
+    $client = new MarketClient;
+
+    // Prepare a structure for each bedroom category
+    $bedroomData = [
+        '1' => ['labels' => [], 'values' => []],
+        '2' => ['labels' => [], 'values' => []],
+        '3' => ['labels' => [], 'values' => []],
+        '4' => ['labels' => [], 'values' => []],
+        '5+' => ['labels' => [], 'values' => []],
+        'combined' => ['labels' => [], 'values' => []],
+    ];
+
+    // Anchor: last day of previous month
+    // Example: if today = Jan 20, 2025 => anchor = Dec 31, 2024
+    $currentEnd = new DateTime('last day of previous month');
+
+    // We'll do 4 calls, each capturing a distinct previous year
+    // We'll store them in ascending order, so we need an array for the partial results
+    $allBlocks = [];
+
+    // for ($i = 0; $i < 4; $i++) {
+    // The 1-year block ends on $currentEnd
+    // The block start is exactly 1 year earlier (+1 day so it’s inclusive)
+    $blockStart = (clone $currentEnd)->modify('-1 year +1 day');
+
+    // Prepare parameters
+    $params = [
+        'suburb' => $suburb,
+        'postcode' => $postcode,
+        'state' => $state,
+        'propertyTypes' => ['house', 'unit'],
+        'frequency' => 'monthly',
+        'start_date' => $blockStart->format('Y-m-d'),
+        'end_date' => $currentEnd->format('Y-m-d'),
+    ];
+    // error_log(print_r($params, true));
+
+    // error_log(sprintf(
+    //     "API Call #%d => %s to %s",
+    //     $i+1,
+    //     $params['start_date'],
+    //     $params['end_date']
+    // ));
+
+    try {
+        // Fetch 12 "rolling monthly" dateRanges from the API
+        $yearData = $client->getSupplyAndDemandData($metric, $params);
+
+        // Store the raw year block so we can merge it after the loop
+        $allBlocks[] = $yearData;
+
+        // error_log(print_r($yearData, true));
+    } catch (\Exception $e) {
+        error_log('Error fetching monthly sale data: '.$e->getMessage());
+    }
+
+    // Move currentEnd back 1 year for the next iteration
+    // e.g., from 2024-12-31 => 2023-12-31
+    $currentEnd = (clone $blockStart)->modify('-1 day');
+    // That means the next block will be the year prior to this block
+    // }
+
+    // Now we have 4 blocks in chronological DESC order (the last iteration is the oldest year).
+    // If you prefer ascending, we can reverse them:
+    $allBlocks = array_reverse($allBlocks);
+
+    // Initialize organized data array
+    $organizedData = [];
+
+    // Process data
+    foreach ($allBlocks[0] as $property) {
+        $propertyType = $property['propertyType'];
+
+        foreach ($property['dateRanges'] as $dateRange) {
+            $startDate = $dateRange['startDate'];
+            $endDate = $dateRange['endDate'];
+
+            foreach ($dateRange['metricValues'] as $metric) {
+                $bedrooms = $metric['bedrooms'];
+
+                // Organize data
+                $organizedData[$propertyType][$bedrooms][] = [
+                    'startDate' => $startDate,
+                    'endDate' => $endDate,
+                    'supply' => $metric['supply'] ?? 0,
+                    'demand' => $metric['demand'] ?? 0,
+                ];
+            }
+        }
+    }
+
+    // dd($allBlocks);
+    // dd($organizedData);
+
+    return $organizedData;
+}
+
 function PropTrackGetNearbySchools(string $suburb)
 {
     $data = new RealCoder\LocalSchools($suburb);
+
     return $data->localSchools;
 }
-

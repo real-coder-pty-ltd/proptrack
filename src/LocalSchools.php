@@ -1,7 +1,9 @@
 <?php
+
 /**
  * Class Boundary Fetcher
  */
+
 namespace RealCoder;
 
 use RealCoder\TokenManager\BaseClient;
@@ -38,26 +40,27 @@ class LocalSchools extends BoundaryFetcher
     out;
     EOT;
 
-    // TODO: Cache the data.
-    // $client = new BaseClient();
-    // $client->get($url, $query);
-    
+        // TODO: Cache the data.
+        // $client = new BaseClient();
+        // $client->get($url, $query);
+
         // Ensure Overpass API receives a GET request
-        $url = "{$this->url}?data=" . urlencode($query);
-    
+        $url = "{$this->url}?data=".urlencode($query);
+
         // Perform GET request
         $response = wp_remote_get($url);
-    
+
         if (is_wp_error($response)) {
             $this->is_error = true;
+
             return [
                 'error' => true,
                 'message' => $response->get_error_message(),
             ];
         }
-    
+
         $data = json_decode(wp_remote_retrieve_body($response), true);
-    
+
         if (empty($data['elements'])) {
             return [
                 'error' => true,
@@ -67,5 +70,4 @@ class LocalSchools extends BoundaryFetcher
         $this->localSchools = $data['elements'];
 
     }
-    
 }
