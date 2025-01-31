@@ -257,8 +257,9 @@ function PropTrackSuburbDescription(string $suburb, string $state, string $postc
     return $text;
 }
 
-function PropTrackMonthlySnapshots(string $suburb, string $state, $postcode): array
+function PropTrackMonthlySnapshots(string $suburb, string $state, $postcode, string $type = 'sale' , string $metric = 'median-sale-price' ): array
 {
+
     $client = new MarketClient;
 
     // Prepare a structure for each bedroom category
@@ -279,7 +280,6 @@ function PropTrackMonthlySnapshots(string $suburb, string $state, $postcode): ar
     // We'll store them in ascending order, so we need an array for the partial results
     $allBlocks = [];
 
-    // for ($i = 0; $i < 4; $i++) {
     // The 1-year block ends on $currentEnd
     // The block start is exactly 1 year earlier (+1 day so it’s inclusive)
     $blockStart = (clone $currentEnd)->modify('-1 year +1 day');
@@ -294,18 +294,10 @@ function PropTrackMonthlySnapshots(string $suburb, string $state, $postcode): ar
         'start_date' => $blockStart->format('Y-m-d'),
         'end_date' => $currentEnd->format('Y-m-d'),
     ];
-    // error_log(print_r($params, true));
-
-    // error_log(sprintf(
-    //     "API Call #%d => %s to %s",
-    //     $i+1,
-    //     $params['start_date'],
-    //     $params['end_date']
-    // ));
 
     try {
         // Fetch 12 "rolling monthly" dateRanges from the API
-        $yearData = $client->getHistoricMarketData('sale', 'median-sale-price', $params);
+        $yearData = $client->getHistoricMarketData($type, $metric, $params);
         // Store the raw year block so we can merge it after the loop
         $allBlocks[] = $yearData;
 
@@ -318,7 +310,6 @@ function PropTrackMonthlySnapshots(string $suburb, string $state, $postcode): ar
     // e.g., from 2024-12-31 => 2023-12-31
     $currentEnd = (clone $blockStart)->modify('-1 day');
     // That means the next block will be the year prior to this block
-    // }
 
     // Now we have 4 blocks in chronological DESC order (the last iteration is the oldest year).
     // If you prefer ascending, we can reverse them:
@@ -442,9 +433,6 @@ function PropTrackSupplyandDemandData(string $suburb, string $state, $postcode, 
             }
         }
     }
-
-    // dd($allBlocks);
-    // dd($organizedData);
 
     return $organizedData;
 }
