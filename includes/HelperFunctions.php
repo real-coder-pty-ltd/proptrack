@@ -311,7 +311,7 @@ function PropTrackMonthlySnapshots(string $suburb, string $state, $postcode): ar
 
         // error_log(print_r($yearData, true));
     } catch (\Exception $e) {
-        error_log("Error fetching monthly sale data (block #$i): ".$e->getMessage());
+        error_log('Error fetching monthly sale data: '.$e->getMessage());
     }
 
     // Move currentEnd back 1 year for the next iteration
@@ -447,6 +447,110 @@ function PropTrackSupplyandDemandData(string $suburb, string $state, $postcode, 
     // dd($organizedData);
 
     return $organizedData;
+}
+
+function PropTrackMedianPriceInsights(string $suburb, string $state, string $postcode): array
+{
+    $client = new MarketClient;
+
+    // Prepare a structure for each bedroom category
+    $bedroomData = [
+        '1' => ['labels' => [], 'values' => []],
+        '2' => ['labels' => [], 'values' => []],
+        '3' => ['labels' => [], 'values' => []],
+        '4' => ['labels' => [], 'values' => []],
+        '5+' => ['labels' => [], 'values' => []],
+        'combined' => ['labels' => [], 'values' => []],
+    ];
+
+    // Anchor: last day of previous month
+    // Example: if today = Jan 20, 2025 => anchor = Dec 31, 2024
+    $currentEnd = new DateTime('last day of previous month');
+
+    // We'll do 4 calls, each capturing a distinct previous year
+    // We'll store them in ascending order, so we need an array for the partial results
+    $allBlocks = [];
+
+    // for ($i = 0; $i < 4; $i++) {
+    // The 1-year block ends on $currentEnd
+    // The block start is exactly 1 year earlier (+1 day so it’s inclusive)
+    $blockStart = (clone $currentEnd)->modify('-1 year +1 day');
+
+    // Prepare parameters
+    $params = [
+        'suburb' => $suburb,
+        'postcode' => $postcode,
+        'state' => $state,
+        'propertyTypes' => ['house', 'unit'],
+        'frequency' => 'yearly',
+        'start_date' => $blockStart->format('Y-m-d'),
+        'end_date' => $currentEnd->format('Y-m-d'),
+    ];
+
+    function reorganizeData($data, $key)
+    {
+        $result = [];
+        foreach ($data as $propertyTypes) {
+            // Sort dateRanges by endDate in descending order
+            usort($propertyTypes['dateRanges'], function ($a, $b) {
+                return strtotime($b['endDate']) - strtotime($a['endDate']);
+            });
+
+            foreach ($propertyTypes['dateRanges'] as $dateRange) {
+                foreach ($dateRange['metricValues'] as $metricValue) {
+                    $bedrooms = $metricValue['bedrooms'];
+                    $value = $metricValue['value'];
+                    $result[$bedrooms][$propertyTypes['propertyType']][$key] = $value;
+                }
+                break; // Only get the first date range for each bedroom
+            }
+        }
+
+        return $result;
+    }
+
+    try {
+        // Fetch 12 "rolling monthly" dateRanges from the API
+        $median_sale_price = reorganizeData($client->getHistoricMarketData('sale', 'median-sale-price', $params), 'median_sale_price');
+        $median_sale_days_on_market = reorganizeData($client->getHistoricMarketData('sale', 'median-days-on-market', $params), 'median_sale_days_on_market');
+        $median_rental_price = reorganizeData($client->getHistoricMarketData('rent', 'median-rental-price', $params), 'median_rental_price');
+        $median_rental_days_on_market = reorganizeData($client->getHistoricMarketData('rent', 'median-days-on-market', $params), 'median_rental_days_on_market');
+
+        // Merge the data
+        $merged_data = [];
+        foreach ([$median_sale_price, $median_sale_days_on_market, $median_rental_price, $median_rental_days_on_market] as $data) {
+            foreach ($data as $bedrooms => $propertyTypes) {
+                foreach ($propertyTypes as $propertyType => $values) {
+                    foreach ($values as $key => $value) {
+                        $merged_data[$bedrooms][$propertyType][$key] = $value;
+                    }
+                }
+            }
+        }
+
+        // Sort the bedrooms by ascending order
+        ksort($merged_data);
+
+        // Ensure 'house' comes before 'unit' for each bedroom
+        foreach ($merged_data as $bedrooms => &$propertyTypes) {
+            if (isset($propertyTypes['house']) && isset($propertyTypes['unit'])) {
+                $propertyTypes = array_merge(['house' => $propertyTypes['house']], ['unit' => $propertyTypes['unit']]);
+            }
+        }
+
+        // Store the raw year block so we can merge it after the loop
+        $allBlocks[] = $merged_data;
+
+        // error_log(print_r($yearData, true));
+    } catch (\Exception $e) {
+        error_log('Error fetching monthly sale data: '.$e->getMessage());
+    }
+
+    $currentEnd = (clone $blockStart)->modify('-1 day');
+
+    // dd($merged_data);
+
+    return $merged_data;
 }
 
 function PropTrackGetNearbySchools(string $suburb)
