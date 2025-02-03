@@ -16,6 +16,7 @@
         }
     ],
     "require": {
-        "laravel/pint": "^1.18"
+        "laravel/pint": "^1.18",
+        "php": ">=7.4"
     }
 }
