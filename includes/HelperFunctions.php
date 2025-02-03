@@ -671,5 +671,22 @@ function PropTrackGetNearbySchools(string $suburb)
 {
     $data = new RealCoder\LocalSchools($suburb);
 
-    return $data->localSchools;
+    return $data;
+}
+
+function PropTrackCalculateDrivingDistance($startLat, $startLon, $endLat, $endLon)
+{
+    $url = "http://router.project-osrm.org/route/v1/driving/{$startLon},{$startLat};{$endLon},{$endLat}?overview=false";
+
+    $response = file_get_contents($url);
+    if ($response === false) {
+        return false;
+    }
+
+    $data = json_decode($response, true);
+    if (isset($data['routes'][0]['distance'])) {
+        return $data['routes'][0]['distance'] / 1000;
+    }
+
+    return false;
 }
