@@ -257,7 +257,7 @@ function PropTrackSuburbDescription(string $suburb, string $state, string $postc
     return $text;
 }
 
-function PropTrackMonthlySnapshots(string $suburb, string $state, $postcode, string $type = 'sale' , string $metric = 'median-sale-price' ): array
+function PropTrackMonthlySnapshots(string $suburb, string $state, $postcode, string $type = 'sale', string $metric = 'median-sale-price'): array
 {
 
     $client = new MarketClient;
@@ -536,7 +536,133 @@ function PropTrackMedianPriceInsights(string $suburb, string $state, string $pos
 
     $currentEnd = (clone $blockStart)->modify('-1 day');
 
-    // dd($merged_data);
+    return $merged_data;
+}
+
+function PropTrackMarketMetrics(string $suburb, string $state, string $postcode): array
+{
+    $client = new MarketClient;
+
+    // Prepare a structure for each bedroom category
+    $bedroomData = [
+        '1' => ['labels' => [], 'values' => []],
+        '2' => ['labels' => [], 'values' => []],
+        '3' => ['labels' => [], 'values' => []],
+        '4' => ['labels' => [], 'values' => []],
+        '5+' => ['labels' => [], 'values' => []],
+        'combined' => ['labels' => [], 'values' => []],
+    ];
+
+    // Anchor: last day of previous month
+    $currentEnd = new DateTime('last day of previous month');
+
+    // The block start is the first day of the month before the last month
+    $blockStart = (clone $currentEnd)->modify('-2 months +1 day');
+
+    // Prepare parameters
+    $params = [
+        'suburb' => $suburb,
+        'postcode' => $postcode,
+        'state' => $state,
+        'propertyTypes' => ['house'],
+        'frequency' => 'monthly',
+        'start_date' => $blockStart->format('Y-m-d'),
+        'end_date' => $currentEnd->format('Y-m-d'),
+    ];
+
+    function reorganizeData2($data, $key)
+    {
+        $result = [];
+        foreach ($data as $propertyTypes) {
+            // Sort dateRanges by endDate in descending order
+            usort($propertyTypes['dateRanges'], function ($a, $b) {
+                return strtotime($b['endDate']) - strtotime($a['endDate']);
+            });
+
+            foreach ($propertyTypes['dateRanges'] as $index => $dateRange) {
+                foreach ($dateRange['metricValues'] as $metricValue) {
+                    $bedrooms = $metricValue['bedrooms'];
+                    $value = $metricValue['value'];
+                    if ($index == 0) {
+                        $result[$bedrooms][$propertyTypes['propertyType']][$key] = $value;
+                    } elseif ($index == 1 && ($key == 'median_sale_price' || $key == 'median_rental_price')) {
+                        $result[$bedrooms][$propertyTypes['propertyType']][$key.'_previous'] = $value;
+                    }
+                }
+                if ($index >= 1) {
+                    break;
+                } // Only get the first two date ranges for each bedroom
+            }
+        }
+
+        return $result;
+    }
+
+    function calculateGrowthRate($current, $previous)
+    {
+        if ($previous == 0) {
+            return null; // Avoid division by zero
+        }
+
+        return (($current - $previous) / $previous) * 100;
+    }
+
+    try {
+        // Fetch 12 "rolling monthly" dateRanges from the API
+        $median_sale_price = reorganizeData2($client->getHistoricMarketData('sale', 'median-sale-price', $params), 'median_sale_price');
+        $median_sale_transaction_volume = reorganizeData2($client->getHistoricMarketData('sale', 'sale-transaction-volume', $params), 'median_sale_transaction_volume');
+        $median_rental_price = reorganizeData2($client->getHistoricMarketData('rent', 'median-rental-price', $params), 'median_rental_price');
+        $median_rental_transaction_volume = reorganizeData2($client->getHistoricMarketData('rent', 'rental-transaction-volume', $params), 'median_rental_transaction_volume');
+        $median_rental_yield = reorganizeData2($client->getHistoricMarketData('rent', 'median-rental-yield', $params), 'median_rental_yield');
+
+        // Merge the data
+        $merged_data = [];
+        foreach ([$median_sale_price, $median_sale_transaction_volume, $median_rental_price, $median_rental_transaction_volume, $median_rental_yield] as $data) {
+            foreach ($data as $bedrooms => $propertyTypes) {
+                foreach ($propertyTypes as $propertyType => $values) {
+                    foreach ($values as $key => $value) {
+                        $merged_data[$bedrooms][$propertyType][$key] = $value;
+                    }
+                }
+            }
+        }
+
+        // Calculate growth rate
+        foreach ($merged_data as $bedrooms => &$propertyTypes) {
+            foreach ($propertyTypes as $propertyType => &$values) {
+                // Calculate growth rate for median_sale_price
+                if (isset($values['median_sale_price']) && isset($values['median_sale_price_previous'])) {
+                    $currentSalePrice = $values['median_sale_price'];
+                    $previousSalePrice = $values['median_sale_price_previous'];
+                    $values['median_sale_price_growth_rate'] = calculateGrowthRate($currentSalePrice, $previousSalePrice);
+                }
+
+                // Calculate growth rate for median_rental_price
+                if (isset($values['median_rental_price']) && isset($values['median_rental_price_previous'])) {
+                    $currentRentalPrice = $values['median_rental_price'];
+                    $previousRentalPrice = $values['median_rental_price_previous'];
+                    $values['median_rental_price_growth_rate'] = calculateGrowthRate($currentRentalPrice, $previousRentalPrice);
+                }
+            }
+        }
+
+        // Sort the bedrooms by ascending order
+        ksort($merged_data);
+
+        // Ensure 'house' comes before 'unit' for each bedroom
+        foreach ($merged_data as $bedrooms => &$propertyTypes) {
+            if (isset($propertyTypes['house']) && isset($propertyTypes['unit'])) {
+                $propertyTypes = array_merge(['house' => $propertyTypes['house']], ['unit' => $propertyTypes['unit']]);
+            }
+        }
+
+        // Include current start and end date
+        $merged_data['start_date'] = $blockStart->format('Y-m-d');
+        $merged_data['end_date'] = $currentEnd->format('Y-m-d');
+
+    } catch (\Exception $e) {
+        error_log('Error fetching monthly sale data: '.$e->getMessage());
+    }
 
     return $merged_data;
 }
