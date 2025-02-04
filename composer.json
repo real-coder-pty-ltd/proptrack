@@ -6,7 +6,8 @@
     "autoload": {
         "psr-4": {
             "RealCoder\\": "src/",
-            "RealCoder\\PropTrack\\": "src/PropTrack/"
+            "RealCoder\\PropTrack\\": "src/PropTrack/",
+            "RealCoder\\Geolocation\\": "src/Geolocation/"
         }
     },
     "authors": [
