@@ -1,0 +1,75 @@
+name: Build Plugin Package
+
+# Trigger this workflow on new tags (e.g., v1.0.0)
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Check out the repository
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # 2. Set up PHP (adjust the PHP version if needed)
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          # Optionally include extensions if needed:
+          # extensions: mbstring, xml
+
+      # 3. Install Composer dependencies (without dev dependencies)
+      - name: Install Dependencies
+        run: composer install --no-dev --prefer-dist
+
+      # 4. Create a ZIP file containing the plugin files, including vendor
+      # Adjust the file/folder list as needed.
+      - name: Create Plugin ZIP
+        run: |
+          # Define the name of the ZIP file based on the tag
+          BUILD_NAME=plugin-${GITHUB_REF##*/}.zip
+          echo "Creating ${BUILD_NAME}"
+          
+          # Remove any previous build artifacts if they exist
+          rm -f ${BUILD_NAME}
+
+          # Zip the necessary files. Adjust the exclusion list (-x) as needed.
+          # This example zips the entire repository, excluding git files and workflow files.
+          zip -r ${BUILD_NAME} . -x "*.git*" ".github/*"
+
+          # List the contents of the generated ZIP (for debugging)
+          unzip -l ${BUILD_NAME}
+
+      # 5. Upload the ZIP as a workflow artifact
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: plugin-package
+          path: plugin-*.zip
+
+      # 6. Create a GitHub Release and attach the ZIP as an asset.
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+      
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./plugin-${{ github.ref_name }}.zip
+          asset_name: plugin-${{ github.ref_name }}.zip
+          asset_content_type: application/zip
