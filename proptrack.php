@@ -21,7 +21,10 @@ if (! defined('WPINC')) {
 
 define('PROPTRACK_VERSION', '0.0.1');
 
-require 'vendor/autoload.php';
+$autoloadPath = __DIR__ . '/vendor/autoload.php';
+if ( file_exists( $autoloadPath ) ) {
+    require $autoloadPath;
+}
 
 function activate_proptrack()
 {
