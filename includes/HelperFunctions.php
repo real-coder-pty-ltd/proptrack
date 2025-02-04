@@ -579,19 +579,22 @@ function PropTrackMarketMetrics(string $suburb, string $state, string $postcode)
                 return strtotime($b['endDate']) - strtotime($a['endDate']);
             });
 
+            $firstIndex = 0;
+            $lastIndex = count($propertyTypes['dateRanges']) - 1;
+
             foreach ($propertyTypes['dateRanges'] as $index => $dateRange) {
                 foreach ($dateRange['metricValues'] as $metricValue) {
                     $bedrooms = $metricValue['bedrooms'];
                     $value = $metricValue['value'];
-                    if ($index == 0) {
+                    if ($index == $firstIndex) {
                         $result[$bedrooms][$propertyTypes['propertyType']][$key] = $value;
-                    } elseif ($index == 1 && ($key == 'median_sale_price' || $key == 'median_rental_price')) {
+                    } elseif ($index == $lastIndex) {
                         $result[$bedrooms][$propertyTypes['propertyType']][$key . '_previous'] = $value;
                     }
                 }
-                if ($index >= 1) {
+                if ($index > $lastIndex) {
                     break;
-                } // Only get the first two date ranges for each bedroom
+                }
             }
         }
 
@@ -600,7 +603,7 @@ function PropTrackMarketMetrics(string $suburb, string $state, string $postcode)
 
     function calculateGrowthRate($current, $previous)
     {
-        if ($previous == 0) {
+        if ($current == 0) {
             return null; // Avoid division by zero
         }
 
