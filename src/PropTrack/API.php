@@ -5,8 +5,11 @@ namespace RealCoder\PropTrack;
 class API
 {
     private $clientId;
+
     private $clientSecret;
+
     private $tokenOptionName = 'proptrack_bearer_token';
+
     private $tokenExpiryOptionName = 'proptrack_token_expiry';
 
     public function __construct()
@@ -15,7 +18,7 @@ class API
         $this->clientId = get_option('proptrack_client');
         $this->clientSecret = get_option('proptrack_secret');
 
-        if (!$this->clientId || !$this->clientSecret) {
+        if (! $this->clientId || ! $this->clientSecret) {
             throw new \Exception('PropTrack client ID or secret not configured in WordPress options.');
         }
     }
@@ -24,6 +27,7 @@ class API
      * Get the bearer token, either from the database or by generating a new one.
      *
      * @return string Bearer token.
+     *
      * @throws \Exception If token generation fails.
      */
     public function getBearerToken(): string
@@ -44,6 +48,7 @@ class API
      * Generate a new bearer token and store it in the database.
      *
      * @return string Bearer token.
+     *
      * @throws \Exception If the request fails.
      */
     private function generateBearerToken(): string
@@ -58,7 +63,7 @@ class API
 
         $response = wp_remote_post($url, [
             'headers' => $headers,
-            'body'    => $data,
+            'body' => $data,
             'timeout' => 15,
         ]);
 

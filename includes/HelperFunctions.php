@@ -17,7 +17,7 @@ function fetchPostcode($suburb, $state, $username)
             echo "Postcode not found for $suburb, $state.";
         }
     } catch (\Exception $e) {
-        echo 'Error: '.$e->getMessage();
+        echo 'Error: ' . $e->getMessage();
     }
 }
 
@@ -33,7 +33,7 @@ function PropTrackAddressID($query)
             echo "ID not found for $query.";
         }
     } catch (\Exception $e) {
-        echo 'Error: '.$e->getMessage();
+        echo 'Error: ' . $e->getMessage();
     }
 }
 
@@ -51,7 +51,7 @@ function PropTrackListings($query)
             echo "Listings not found for $query.";
         }
     } catch (\Exception $e) {
-        echo 'Error: '.$e->getMessage();
+        echo 'Error: ' . $e->getMessage();
     }
 }
 
@@ -76,9 +76,9 @@ function PropTrackSuburbDescription(string $suburb, string $state, string $postc
         $rent = $client->getSupplyAndDemandData('potential-renters', $params);
 
     } catch (\Exception $e) {
-        error_log('Error fetching supply and demand data: '.$e->getMessage());
+        error_log('Error fetching supply and demand data: ' . $e->getMessage());
 
-        return 'Error fetching supply and demand data: '.$e->getMessage();
+        return 'Error fetching supply and demand data: ' . $e->getMessage();
     }
 
     $rent_last_month_supply_house = last(last($rent[0]['dateRanges'])['metricValues'])['supply'];
@@ -101,28 +101,28 @@ function PropTrackSuburbDescription(string $suburb, string $state, string $postc
         $rentalYield = $client->getHistoricMarketData('rent', 'median-rental-yield', $params);
 
     } catch (\Exception $e) {
-        error_log('Error fetching supply and demand data: '.$e->getMessage());
+        error_log('Error fetching supply and demand data: ' . $e->getMessage());
 
-        return 'Error fetching supply and demand data: '.$e->getMessage();
+        return 'Error fetching supply and demand data: ' . $e->getMessage();
     }
     $house_median_rental_yield = last($rentalYield[0]['dateRanges'])['metricValues'][0]['value'];
     $unit_median_rental_yield = last($rentalYield[1]['dateRanges'])['metricValues'][0]['value'];
 
     // Convert rental yield to percentage with 2 decimal places like this: 5.67%
-    $house_median_rental_yield = number_format($house_median_rental_yield * 100, 2).'%';
-    $unit_median_rental_yield = number_format($unit_median_rental_yield * 100, 2).'%';
+    $house_median_rental_yield = number_format($house_median_rental_yield * 100, 2) . '%';
+    $unit_median_rental_yield = number_format($unit_median_rental_yield * 100, 2) . '%';
 
     $rentalValue = $client->getHistoricMarketData('rent', 'median-rental-price', $params);
 
     // Average house rental amount per week
     $rent_house_year = $rentalValue[0]['dateRanges'][0]['metricValues'];
     $rent_house_year = end($rent_house_year)['value'];
-    $rent_house_year = '$'.number_format($rent_house_year, 0, '.', ',');
+    $rent_house_year = '$' . number_format($rent_house_year, 0, '.', ',');
 
     // Average unit rental amount per week
     $rent_unit_year = $rentalValue[1]['dateRanges'][0]['metricValues'];
     $rent_unit_year = end($rent_unit_year)['value'];
-    $rent_unit_year = '$'.number_format($rent_unit_year, 0, '.', ',');
+    $rent_unit_year = '$' . number_format($rent_unit_year, 0, '.', ',');
 
     // Buy Data
     try {
@@ -140,9 +140,9 @@ function PropTrackSuburbDescription(string $suburb, string $state, string $postc
         $buy = $client->getSupplyAndDemandData('potential-buyers', $params);
 
     } catch (\Exception $e) {
-        error_log('Error fetching supply and demand data: '.$e->getMessage());
+        error_log('Error fetching supply and demand data: ' . $e->getMessage());
 
-        return 'Error fetching supply and demand data: '.$e->getMessage();
+        return 'Error fetching supply and demand data: ' . $e->getMessage();
     }
 
     // Buy
@@ -162,17 +162,17 @@ function PropTrackSuburbDescription(string $suburb, string $state, string $postc
         $historicSaleData = $client->getHistoricMarketData('sale', 'median-sale-price', $params);
 
     } catch (\Exception $e) {
-        error_log('Error fetching historic sale data: '.$e->getMessage());
+        error_log('Error fetching historic sale data: ' . $e->getMessage());
 
-        return 'Error fetching historic sale data: '.$e->getMessage();
+        return 'Error fetching historic sale data: ' . $e->getMessage();
     }
 
     // Median Price
     $medianHousePrice = (int) $historicSaleData[0]['dateRanges'][0]['metricValues'][0]['value'];
     $medianUnitPrice = (int) $historicSaleData[1]['dateRanges'][0]['metricValues'][0]['value'];
 
-    $medianHousePrice = '$'.number_format($medianHousePrice, 0, '.', ',');
-    $medianUnitPrice = '$'.number_format($medianUnitPrice, 0, '.', ',');
+    $medianHousePrice = '$' . number_format($medianHousePrice, 0, '.', ',');
+    $medianUnitPrice = '$' . number_format($medianUnitPrice, 0, '.', ',');
 
     // "This Year": last 12 months up to now
     $endDateThisYear = new DateTime; // today
@@ -210,9 +210,9 @@ function PropTrackSuburbDescription(string $suburb, string $state, string $postc
         $historicSaleDataLastYear = $client->getHistoricMarketData('sale', 'median-sale-price', $paramsLastYear);
 
     } catch (\Exception $e) {
-        error_log('Error fetching historic sale data: '.$e->getMessage());
+        error_log('Error fetching historic sale data: ' . $e->getMessage());
 
-        return 'Error fetching historic sale data: '.$e->getMessage();
+        return 'Error fetching historic sale data: ' . $e->getMessage();
     }
 
     $sales_house_average_this_year = $historicSaleDataThisYear[0]['dateRanges'][0]['metricValues'];
@@ -223,7 +223,7 @@ function PropTrackSuburbDescription(string $suburb, string $state, string $postc
 
     $growthRate = ($sales_house_average_this_year - $sales_house_average_last_year) / $sales_house_average_last_year * 100;
 
-    $growthRate = number_format($growthRate, 2, '.', '').'%';
+    $growthRate = number_format($growthRate, 2, '.', '') . '%';
 
     $sales_unit_average_this_year = $historicSaleDataThisYear[1]['dateRanges'][0]['metricValues'];
     $sales_unit_average_this_year = end($sales_unit_average_this_year)['value'];
@@ -233,11 +233,11 @@ function PropTrackSuburbDescription(string $suburb, string $state, string $postc
 
     $unitGrowthRate = ($sales_unit_average_this_year - $sales_unit_average_last_year) / $sales_unit_average_last_year * 100;
 
-    $unitGrowthRate = number_format($unitGrowthRate, 2, '.', '').'%';
+    $unitGrowthRate = number_format($unitGrowthRate, 2, '.', '') . '%';
 
-    $text = sprintf('Last month <strong>%s</strong> had <strong>%d</strong> properties available for rent and <strong>%d</strong> properties for sale. '.
-        'Median property prices over the last year range from <strong>%s</strong> for houses to <strong>%s</strong> for units. '.
-        'If you are looking for an investment property, consider houses in <strong>%s</strong> rent out for <strong>%s</strong> with an annual rental yield of <strong>%s</strong> '.
+    $text = sprintf('Last month <strong>%s</strong> had <strong>%d</strong> properties available for rent and <strong>%d</strong> properties for sale. ' .
+        'Median property prices over the last year range from <strong>%s</strong> for houses to <strong>%s</strong> for units. ' .
+        'If you are looking for an investment property, consider houses in <strong>%s</strong> rent out for <strong>%s</strong> with an annual rental yield of <strong>%s</strong> ' .
         'and units rent for <strong>%s</strong> with a rental yield of <strong>%s</strong>. <strong>%s</strong> has seen an annual compound growth rate of <strong>%s</strong> for houses and <strong>%s</strong> for units.',
         $suburb,
         $rent_last_month_supply_total,
@@ -303,7 +303,7 @@ function PropTrackMonthlySnapshots(string $suburb, string $state, $postcode, str
 
         // error_log(print_r($yearData, true));
     } catch (\Exception $e) {
-        error_log('Error fetching monthly sale data: '.$e->getMessage());
+        error_log('Error fetching monthly sale data: ' . $e->getMessage());
     }
 
     // Move currentEnd back 1 year for the next iteration
@@ -396,7 +396,7 @@ function PropTrackSupplyandDemandData(string $suburb, string $state, $postcode, 
 
         // error_log(print_r($yearData, true));
     } catch (\Exception $e) {
-        error_log('Error fetching monthly sale data: '.$e->getMessage());
+        error_log('Error fetching monthly sale data: ' . $e->getMessage());
     }
 
     // Move currentEnd back 1 year for the next iteration
@@ -531,7 +531,7 @@ function PropTrackMedianPriceInsights(string $suburb, string $state, string $pos
 
         // error_log(print_r($yearData, true));
     } catch (\Exception $e) {
-        error_log('Error fetching monthly sale data: '.$e->getMessage());
+        error_log('Error fetching monthly sale data: ' . $e->getMessage());
     }
 
     $currentEnd = (clone $blockStart)->modify('-1 day');
@@ -586,7 +586,7 @@ function PropTrackMarketMetrics(string $suburb, string $state, string $postcode)
                     if ($index == 0) {
                         $result[$bedrooms][$propertyTypes['propertyType']][$key] = $value;
                     } elseif ($index == 1 && ($key == 'median_sale_price' || $key == 'median_rental_price')) {
-                        $result[$bedrooms][$propertyTypes['propertyType']][$key.'_previous'] = $value;
+                        $result[$bedrooms][$propertyTypes['propertyType']][$key . '_previous'] = $value;
                     }
                 }
                 if ($index >= 1) {
@@ -661,7 +661,7 @@ function PropTrackMarketMetrics(string $suburb, string $state, string $postcode)
         $merged_data['end_date'] = $currentEnd->format('Y-m-d');
 
     } catch (\Exception $e) {
-        error_log('Error fetching monthly sale data: '.$e->getMessage());
+        error_log('Error fetching monthly sale data: ' . $e->getMessage());
     }
 
     return $merged_data;

@@ -45,7 +45,7 @@ class LocalSchools extends BoundaryFetcher
         // $client->get($url, $query);
 
         // Ensure Overpass API receives a GET request
-        $url = "{$this->url}?data=".urlencode($query);
+        $url = "{$this->url}?data=" . urlencode($query);
 
         // Perform GET request
         $response = wp_remote_get($url);

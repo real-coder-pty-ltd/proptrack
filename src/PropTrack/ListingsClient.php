@@ -7,8 +7,9 @@ class ListingsClient extends BaseClient
     /**
      * Retrieves a listing by its ID.
      *
-     * @param int $listingId The ID of the listing to retrieve.
+     * @param  int  $listingId  The ID of the listing to retrieve.
      * @return array The JSON-decoded response containing the listing details.
+     *
      * @throws \Exception If the request fails.
      */
     public function getListingById($listingId)
@@ -27,8 +28,9 @@ class ListingsClient extends BaseClient
     /**
      * Searches listings by point and radius.
      *
-     * @param array $params Associative array of query parameters.
+     * @param  array  $params  Associative array of query parameters.
      * @return array The JSON-decoded response containing the listings.
+     *
      * @throws \Exception If the request fails or required parameters are missing.
      */
     public function searchListingsByPointAndRadius(array $params)
@@ -48,7 +50,7 @@ class ListingsClient extends BaseClient
         $allowedListingTypes = ['sale', 'rent'];
         $listingTypes = is_array($params['listingTypes']) ? $params['listingTypes'] : explode(',', $params['listingTypes']);
         foreach ($listingTypes as $type) {
-            if (!in_array($type, $allowedListingTypes, true)) {
+            if (! in_array($type, $allowedListingTypes, true)) {
                 throw new \InvalidArgumentException("Invalid listing type '$type'. Allowed values are 'sale', 'rent'.");
             }
         }
@@ -56,7 +58,7 @@ class ListingsClient extends BaseClient
 
         // Validate 'pointType' and related parameters
         $allowedPointTypes = ['propertyId', 'latLong'];
-        if (!in_array($params['pointType'], $allowedPointTypes, true)) {
+        if (! in_array($params['pointType'], $allowedPointTypes, true)) {
             throw new \InvalidArgumentException("Invalid point type '{$params['pointType']}'. Allowed values are 'propertyId', 'latLong'.");
         }
 

@@ -1,17 +1,20 @@
 <?php
+
 /**
  * The core plugin class.
  *
  * This is used to define internationalization, admin-specific hooks, and
  * public-facing site hooks.
- *
  */
+
 namespace RealCoder;
 
 class PropTrack
 {
     protected $loader;
+
     protected $plugin_name;
+
     protected $version;
 
     public function __construct()
@@ -19,7 +22,7 @@ class PropTrack
         if (defined('PROPTRACK_VERSION')) {
             $this->version = PROPTRACK_VERSION;
         }
-        
+
         $this->plugin_name = 'proptrack';
 
         $this->load_dependencies();
@@ -31,11 +34,11 @@ class PropTrack
 
     private function load_dependencies()
     {
-        require_once plugin_dir_path(dirname(__FILE__)).'class-proptrack-loader.php';
-        require_once plugin_dir_path(dirname(__FILE__)).'class-proptrack-admin.php';
-        require_once plugin_dir_path(dirname(__FILE__)).'class-proptrack-public.php';
+        require_once plugin_dir_path(dirname(__FILE__)) . 'class-proptrack-loader.php';
+        require_once plugin_dir_path(dirname(__FILE__)) . 'class-proptrack-admin.php';
+        require_once plugin_dir_path(dirname(__FILE__)) . 'class-proptrack-public.php';
 
-        $this->loader = new PropTrackLoader();
+        $this->loader = new PropTrackLoader;
 
     }
 

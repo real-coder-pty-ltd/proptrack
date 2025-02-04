@@ -119,7 +119,7 @@ class MarketClient extends BaseClient
         // Validate 'state'
         $allowedStates = ['act', 'nsw', 'nt', 'qld', 'sa', 'tas', 'vic', 'wa'];
         if (! in_array(strtolower($params['state']), $allowedStates, true)) {
-            throw new \InvalidArgumentException("Invalid 'state' value '{$params['state']}'. Allowed values are ".implode(', ', $allowedStates).'.');
+            throw new \InvalidArgumentException("Invalid 'state' value '{$params['state']}'. Allowed values are " . implode(', ', $allowedStates) . '.');
         }
         $params['state'] = strtolower($params['state']); // Ensure state is in lowercase
 
@@ -194,7 +194,7 @@ class MarketClient extends BaseClient
         // Validate 'state'
         $allowedStates = ['act', 'nsw', 'nt', 'qld', 'sa', 'tas', 'vic', 'wa'];
         if (! in_array(strtolower($params['state']), $allowedStates, true)) {
-            throw new \InvalidArgumentException("Invalid 'state' value '{$params['state']}'. Allowed values are ".implode(', ', $allowedStates).'.');
+            throw new \InvalidArgumentException("Invalid 'state' value '{$params['state']}'. Allowed values are " . implode(', ', $allowedStates) . '.');
         }
         $params['state'] = strtolower($params['state']); // Ensure state is in lowercase
 

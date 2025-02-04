@@ -7,11 +7,12 @@ use RealCoder\TokenManager;
 class BaseClient
 {
     protected $tokenManager;
+
     protected $baseUrl = 'https://data.proptrack.com/api/v2';
 
     public function __construct()
     {
-        $this->tokenManager = new TokenManager();
+        $this->tokenManager = new TokenManager;
     }
 
     public function get($endpoint, $queryParams = [])
@@ -22,17 +23,13 @@ class BaseClient
         $cachedData = $this->getCachedData($cacheKey);
 
         if ($cachedData !== false) {
-            error_log('Using cached data for: ' . $cacheKey);
-            error_log(print_r('Endpoint: ' . $endpoint, true));
-            error_log(print_r($queryParams, true));
-
             return $cachedData;
         }
 
         // Make the API request
         $url = rtrim($this->baseUrl, '/') . '/' . ltrim($endpoint, '/');
 
-        if (!empty($queryParams)) {
+        if (! empty($queryParams)) {
             $url .= '?' . http_build_query($queryParams);
         }
 
@@ -73,13 +70,8 @@ class BaseClient
 
     protected function getCacheKey($endpoint, $params)
     {
-        error_log(print_r('================', true));
-        error_log(print_r('endpoint: ' . $endpoint, true));
-        error_log(print_r($params, true));
-        error_log(print_r('proptrack_' . md5($endpoint . serialize($params)), true));
-        error_log(print_r('================', true));
         return 'proptrack_' . md5($endpoint . serialize($params));
-        
+
     }
 
     protected function getCachedData($cacheKey)

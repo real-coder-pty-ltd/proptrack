@@ -1,7 +1,9 @@
 <?php
+
 /**
  * Class Boundary Fetcher
  */
+
 namespace RealCoder;
 
 // Exit if accessed directly.
@@ -42,18 +44,20 @@ class BoundaryFetcher
         $this->fetchBoundaryData();
         $this->getLat();
         $this->getLong();
+
         return $this;
     }
 
     public function getLat()
     {
-        if ( $this->data[0]['bounds']['minlat'] === null || $this->data[0]['bounds']['maxlat'] === null ) {
+        if ($this->data[0]['bounds']['minlat'] === null || $this->data[0]['bounds']['maxlat'] === null) {
             return null;
         }
 
         $lat = ($this->data[0]['bounds']['minlat'] + $this->data[0]['bounds']['maxlat']) / 2;
         if ($lat) {
             $this->latitude = $lat;
+
             return $lat;
         }
 
@@ -62,13 +66,14 @@ class BoundaryFetcher
 
     public function getLong()
     {
-        if ( $this->data[0]['bounds']['minlon'] === null || $this->data[0]['bounds']['maxlon'] === null ) {
+        if ($this->data[0]['bounds']['minlon'] === null || $this->data[0]['bounds']['maxlon'] === null) {
             return null;
         }
 
         $long = ($this->data[0]['bounds']['minlon'] + $this->data[0]['bounds']['maxlon']) / 2;
         if ($long) {
             $this->longitude = $long;
+
             return $long;
         }
 

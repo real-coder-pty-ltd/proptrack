@@ -1,16 +1,17 @@
 <?php
+
 /**
  * Example functions to use the PropTrack API.
  */
 
-use RealCoder\PropTrack\MarketClient;
-use RealCoder\PropTrack\ListingsClient;
 use RealCoder\PropTrack\AddressClient;
+use RealCoder\PropTrack\ListingsClient;
+use RealCoder\PropTrack\MarketClient;
 
 function fetch_address_suggestions($address)
 {
     try {
-        $client = new AddressClient();
+        $client = new AddressClient;
         $suggestions = $client->getAddressSuggestions($address);
 
         foreach ($suggestions as $suggestion) {
@@ -24,7 +25,7 @@ function fetch_address_suggestions($address)
 function fetch_listing_by_id()
 {
     try {
-        $client = new ListingsClient();
+        $client = new ListingsClient;
         $listingId = 123456; // Replace with actual listing ID
         $listing = $client->getListingById($listingId);
 
@@ -38,7 +39,7 @@ function fetch_listing_by_id()
 function fetch_auction_results()
 {
     try {
-        $client = new MarketClient();
+        $client = new MarketClient;
         $params = [
             'searchType' => 'suburb',
             'suburb' => 'Berwick',
@@ -60,7 +61,7 @@ function fetch_auction_results()
 function fetch_historic_sale_data()
 {
     try {
-        $client = new MarketClient();
+        $client = new MarketClient;
         $type = 'sale';
         $metric = 'median-sale-price';
         $params = [
@@ -83,7 +84,7 @@ function fetch_historic_sale_data()
 function fetch_supply_and_demand_data()
 {
     try {
-        $client = new MarketClient();
+        $client = new MarketClient;
         $metric = 'potential-buyers';
         $params = [
             'suburb' => 'Sydney',

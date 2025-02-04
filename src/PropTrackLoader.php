@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Register all actions and filters for the plugin.
  *
@@ -6,11 +7,13 @@
  * the plugin, and register them with the WordPress API. Call the
  * run function to execute the list of actions and filters.
  */
+
 namespace RealCoder;
 
 class PropTrackLoader
 {
     protected $actions;
+
     protected $filters;
 
     public function __construct()
@@ -38,6 +41,7 @@ class PropTrackLoader
             'priority' => $priority,
             'accepted_args' => $accepted_args,
         ];
+
         return $hooks;
     }
 

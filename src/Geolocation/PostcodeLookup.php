@@ -5,6 +5,7 @@ namespace RealCoder\Geolocation;
 class PostcodeLookup
 {
     private $baseUrl = 'http://api.geonames.org/postalCodeSearchJSON';
+
     private $username;
 
     public function __construct($username)
@@ -18,9 +19,10 @@ class PostcodeLookup
     /**
      * Retrieves the postcode for a given suburb and state.
      *
-     * @param string $suburb The name of the suburb.
-     * @param string $state The name or abbreviation of the state.
+     * @param  string  $suburb  The name of the suburb.
+     * @param  string  $state  The name or abbreviation of the state.
      * @return string|null The postcode if found, or null if not found.
+     *
      * @throws \Exception If the request fails or returns an error.
      */
     public function getPostcode($suburb, $state)
@@ -61,7 +63,7 @@ class PostcodeLookup
         }
 
         // Extract the postcode from the API response
-        if (!empty($data['postalCodes']) && isset($data['postalCodes'][0]['postalCode'])) {
+        if (! empty($data['postalCodes']) && isset($data['postalCodes'][0]['postalCode'])) {
             return $data['postalCodes'][0]['postalCode'];
         }
 

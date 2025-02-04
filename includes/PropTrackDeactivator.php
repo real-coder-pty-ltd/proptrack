@@ -1,7 +1,9 @@
 <?php
+
 /**
  * Fired during plugin deactivation
  */
+
 namespace RealCoder;
 
 class PropTrackDeactivator

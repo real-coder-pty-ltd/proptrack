@@ -1,34 +1,41 @@
 <?php
+
 /**
  * Class DistanceCalculator
  */
+
 namespace RealCoder;
 
 class DistanceCalculator
 {
     private string $apiKey;
+
     private array $travelModes = ['driving', 'transit', 'walking', 'bicycling'];
+
     public array $data;
+
     private array $messages;
+
     private string $meta_key;
 
     public function __construct()
     {
         $this->apiKey = get_option('proptrack_gmaps_server_api_key');
 
-        if ( ! $this->apiKey) {
+        if (! $this->apiKey) {
             return new WP_Error('api_error', 'Server Side Google Maps API key is missing. Please set it in the settings.');
         }
     }
 
     public function calculateAndSaveDistances(int $origin_id, int $destination_id): array
     {
-        $distanceData = get_post_meta($origin_id, $destination_id.'_distance_data', true);
+        $distanceData = get_post_meta($origin_id, $destination_id . '_distance_data', true);
 
         if ($distanceData) {
             $this->data[$destination_id] = $distanceData;
-            $this->meta_key = $destination_id.'_distance_data';
+            $this->meta_key = $destination_id . '_distance_data';
             $this->messages[$destination_id] = 'Data already exists. API request was skipped.';
+
             return $this->messages;
         }
 
@@ -48,41 +55,43 @@ class DistanceCalculator
 
             if (is_wp_error($result)) {
                 $this->messages[$destination_id] = 'Error fetching data: ' . $result->get_error_message();
+
                 continue;
             }
 
             $distanceData[$mode] = $result;
         }
 
-        if (!empty($distanceData)) {
-            update_post_meta($origin_id, $destination_id.'_distance_data', $distanceData);
+        if (! empty($distanceData)) {
+            update_post_meta($origin_id, $destination_id . '_distance_data', $distanceData);
             // Save it to each post so we don't have to make the request again.
-            update_post_meta($destination_id, $origin_id.'_distance_data', $distanceData);
+            update_post_meta($destination_id, $origin_id . '_distance_data', $distanceData);
             $this->messages[$destination_id] = 'Distance data successfully retrieved and saved.';
-            $this->meta_key = $destination_id.'_distance_data';
+            $this->meta_key = $destination_id . '_distance_data';
             $this->data[$destination_id] = $distanceData;
+
             return $this->messages;
         }
 
         $this->messages[$destination_id] = 'Failed to retrieve distance data.';
+
         return $this->messages;
     }
 
     /**
      * Retrieves distance and duration data from Google Maps Distance Matrix API.
      *
-     * @param string $origin      The origin coordinates in "lat,lng" format.
-     * @param string $destination The destination coordinates in "lat,lng" format.
-     * @param string $mode        The travel mode (driving, transit, bicycling, walking).
-     *
+     * @param  string  $origin  The origin coordinates in "lat,lng" format.
+     * @param  string  $destination  The destination coordinates in "lat,lng" format.
+     * @param  string  $mode  The travel mode (driving, transit, bicycling, walking).
      */
     private function getDistanceData(string $origin, string $destination, string $mode): array|WP_Error
     {
         $url = add_query_arg([
-            'origins'      => $origin,
+            'origins' => $origin,
             'destinations' => $destination,
-            'mode'         => $mode,
-            'key'          => $this->apiKey,
+            'mode' => $mode,
+            'key' => $this->apiKey,
         ], 'https://maps.googleapis.com/maps/api/distancematrix/json');
 
         $response = wp_remote_get($url);

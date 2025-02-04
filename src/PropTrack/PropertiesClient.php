@@ -21,7 +21,7 @@ class PropertiesClient extends BaseClient
             throw new \InvalidArgumentException("Parameter 'propertyId' is required.");
         }
 
-        $endpoint = '/properties/'.$propertyId.'/listings';
+        $endpoint = '/properties/' . $propertyId . '/listings';
 
         return $this->get($endpoint);
     }
