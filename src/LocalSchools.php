@@ -16,7 +16,7 @@ if (! defined('ABSPATH')) {
 /**
  * Get local schools via Open Street Maps API.
  * Example:
- * curl -X GET "https://overpass-api.de/api/interpreter?data=[out:json];node(around:10000,-27.543806382017088,153.12682538407537)[amenity=school];out;"
+ * curl -X GET "https://overpass-api.de/api/interpreter?data=[out:json];node(around:15000,-27.543806382017088,153.12682538407537)[amenity=school];out;"
  */
 class LocalSchools extends BoundaryFetcher
 {
@@ -36,7 +36,7 @@ class LocalSchools extends BoundaryFetcher
     {
         $query = <<<EOT
     [out:json];
-    node(around:10000,{$this->latitude},{$this->longitude})[amenity=school];
+    node(around:15000,{$this->latitude},{$this->longitude})[amenity=school];
     out;
     EOT;
 
