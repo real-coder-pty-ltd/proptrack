@@ -17,6 +17,7 @@ class AddressClient extends BaseClient
         $endpoint = '/address/suggest';
         $queryParams = [
             'q' => $query,
+            'numberOfResults' => 6,
         ];
 
         return $this->get($endpoint, $queryParams);

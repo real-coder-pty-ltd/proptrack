@@ -25,4 +25,18 @@ class PropertiesClient extends BaseClient
 
         return $this->get($endpoint);
     }
+
+    public function getPropertySummary($propertyId)
+    {
+        $propertyId = intval($propertyId);
+
+        // Validate required parameter
+        if (empty($propertyId)) {
+            throw new \InvalidArgumentException("Parameter 'propertyId' is required.");
+        }
+
+        $endpoint = '/properties/' . $propertyId . '/summary';
+
+        return $this->get($endpoint);
+    }
 }

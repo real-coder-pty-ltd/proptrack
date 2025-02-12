@@ -4,6 +4,7 @@ use RealCoder\Geolocation\PostcodeLookup;
 use RealCoder\PropTrack\AddressClient;
 use RealCoder\PropTrack\MarketClient;
 use RealCoder\PropTrack\PropertiesClient;
+use RealCoder\PropTrack\ReportsClient;
 
 function fetchPostcode($suburb, $state, $username)
 {
@@ -34,6 +35,56 @@ function PropTrackAddressID($query)
         }
     } catch (\Exception $e) {
         echo 'Error: ' . $e->getMessage();
+    }
+}
+
+function PropTrackAddressSuggest($query)
+{
+    try {
+        $address = new AddressClient;
+        $suggest = $address->getAddressSuggestions($query);
+
+        if ($suggest) {
+            return $suggest;
+        } else {
+            echo "Address not found for $query.";
+        }
+    } catch (\Exception $e) {
+        echo 'Error: ' . $e->getMessage();
+    }
+}
+
+function PropTrackPropertySummary($id)
+{
+    try {
+        $property = new PropertiesClient;
+        $summary = $property->getPropertySummary($id);
+
+        if ($summary) {
+            return $summary;
+        } else {
+            echo "Summary not found for $id.";
+        }
+    } catch (\Exception $e) {
+        echo 'Error: ' . $e->getMessage();
+    }
+}
+
+function PropTrackPropertyReport($id)
+{
+    try {
+        $report = new ReportsClient;
+        $property_report = $report->getReport($id);
+
+        if ($property_report) {
+            return $property_report;
+        } else {
+            // echo "Report not found for $id.";
+            return null;
+        }
+    } catch (\Exception $e) {
+        // echo 'Error: ' . $e->getMessage();
+        return null;
     }
 }
 

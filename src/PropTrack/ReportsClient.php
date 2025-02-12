@@ -2,64 +2,47 @@
 
 namespace RealCoder\PropTrack;
 
-class ReportsClient extends BaseClient
+class ReportsClient
 {
-    /**
-     * Unique identifier for a property.
-     * Use address/match or address/suggest to get the propertyId.
-     */
-    public int $propertyId;
-
-    /**
-     * Unique report configuration identifier, provided by PropTrack
-     * Default is a standard PropTrack property report
-     */
-    public string $configId;
-
-    /**
-     * Date after which the report will expire
-     * Default is 90 days from date of issue
-     * Note: Maximum timeframe is 12 months
-     * Format YYYY-MM-DD
-     */
-    public string $expiresAt;
-
-    /**
-     * Custom data or information displayed on a property report, available on a premium report only
-     * Some examples may include: name, email or phone number (Contact PropTrack to discuss your requirements)
-     */
-    public array $meta;
+    protected $client;
 
     public function __construct()
     {
-        parent::__construct();
+        $this->client = new BaseClient_v1;
     }
 
     /**
      * Gets an AVM Report for a property.
      */
-    public function getReport(string $address): self
+    public function getReport($propertyId)
     {
-        // string $propertyId, array $meta, string $configId = '', string $expiresAt = ''
-        $address = new AddressClient;
-        $addressMatch = $address->matchAddress($address);
-
-        dd($addressMatch);
-
         $propertyId = intval($propertyId);
 
         if (empty($propertyId)) {
             throw new \InvalidArgumentException("Parameter 'propertyId' is required.");
         }
 
-        if (! is_array($meta)) {
-            throw new \InvalidArgumentException("Parameter 'meta' must be an array.");
+        try {
+            $endpoint = '/reports/property';
+            $expiresAt = (new \DateTime)->modify('+90 days')->format('Y-m-d');
+            $postData = [
+                'propertyId' => $propertyId,
+                // 'configId' => '46ff6d11-d8b2-40d8-9197-dfa33c61cd6c',
+                'expiresAt' => $expiresAt,
+                'meta' => [
+                    'clientInfo' => [
+                        'legalName' => 'Image Property',
+                        'abn' => '71 639 714 686',
+                    ],
+                ],
+            ];
+            $response = $this->client->post($endpoint, $postData);
+
+            return $response;
+        } catch (\Exception $e) {
+            // echo 'Error: ' . $e->getMessage();
         }
 
-        $this->propertyId = $propertyId;
-
-        $endpoint = '/reports/property';
-
-        return $this->get($endpoint);
+        return null; // Ensure a return value in case of an exception
     }
 }
