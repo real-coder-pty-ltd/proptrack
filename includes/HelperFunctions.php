@@ -172,8 +172,12 @@ function PropTrackSuburbDescription(string $suburb, string $state, string $postc
 
     // Average unit rental amount per week
     $rent_unit_year = $rentalValue[1]['dateRanges'][0]['metricValues'];
-    $rent_unit_year = end($rent_unit_year)['value'];
-    $rent_unit_year = '$' . number_format($rent_unit_year, 0, '.', ',');
+    if (isset($rent_unit_year) && is_array($rent_unit_year) ) {
+        $rent_unit_year = end($rent_unit_year)['value'];
+        $rent_unit_year = '$' . number_format($rent_unit_year, 0, '.', ',');
+    } else {
+        $rent_unit_year = '';
+    }
 
     // Buy Data
     try {
