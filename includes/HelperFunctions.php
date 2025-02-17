@@ -172,7 +172,7 @@ function PropTrackSuburbDescription(string $suburb, string $state, string $postc
 
     // Average unit rental amount per week
     $rent_unit_year = $rentalValue[1]['dateRanges'][0]['metricValues'];
-    if (isset($rent_unit_year) && is_array($rent_unit_year) ) {
+    if (isset($rent_unit_year) && is_array($rent_unit_year)) {
         $rent_unit_year = end($rent_unit_year)['value'];
         $rent_unit_year = '$' . number_format($rent_unit_year, 0, '.', ',');
     } else {
@@ -468,25 +468,31 @@ function PropTrackSupplyandDemandData(string $suburb, string $state, $postcode, 
     $organizedData = [];
 
     // Process data
-    foreach ($allBlocks[0] as $property) {
-        $propertyType = $property['propertyType'];
+    if (! empty($allBlocks) && isset($allBlocks[0])) {
+        foreach ($allBlocks[0] as $property) {
+            $propertyType = $property['propertyType'];
 
-        foreach ($property['dateRanges'] as $dateRange) {
-            $startDate = $dateRange['startDate'];
-            $endDate = $dateRange['endDate'];
+            foreach ($property['dateRanges'] as $dateRange) {
+                $startDate = $dateRange['startDate'];
+                $endDate = $dateRange['endDate'];
 
-            foreach ($dateRange['metricValues'] as $metric) {
-                $bedrooms = $metric['bedrooms'];
+                foreach ($dateRange['metricValues'] as $metric) {
+                    $bedrooms = $metric['bedrooms'];
 
-                // Organize data
-                $organizedData[$propertyType][$bedrooms][] = [
-                    'startDate' => $startDate,
-                    'endDate' => $endDate,
-                    'supply' => $metric['supply'] ?? 0,
-                    'demand' => $metric['demand'] ?? 0,
-                ];
+                    // Organize data
+                    $organizedData[$propertyType][$bedrooms][] = [
+                        'startDate' => $startDate,
+                        'endDate' => $endDate,
+                        'supply' => $metric['supply'] ?? 0,
+                        'demand' => $metric['demand'] ?? 0,
+                    ];
+                }
             }
         }
+    } else {
+        // Handle the case where $allBlocks is empty or does not contain the expected structure
+        // For example, you can initialize $organizedData as an empty array
+        $organizedData = [];
     }
 
     return $organizedData;
@@ -530,6 +536,9 @@ function PropTrackMedianPriceInsights(string $suburb, string $state, string $pos
         'end_date' => $currentEnd->format('Y-m-d'),
     ];
 
+    // Merge the data
+    $merged_data = [];
+
     function reorganizeData($data, $key)
     {
         $result = [];
@@ -559,8 +568,6 @@ function PropTrackMedianPriceInsights(string $suburb, string $state, string $pos
         $median_rental_price = reorganizeData($client->getHistoricMarketData('rent', 'median-rental-price', $params), 'median_rental_price');
         $median_rental_days_on_market = reorganizeData($client->getHistoricMarketData('rent', 'median-days-on-market', $params), 'median_rental_days_on_market');
 
-        // Merge the data
-        $merged_data = [];
         foreach ([$median_sale_price, $median_sale_days_on_market, $median_rental_price, $median_rental_days_on_market] as $data) {
             foreach ($data as $bedrooms => $propertyTypes) {
                 foreach ($propertyTypes as $propertyType => $values) {
@@ -625,6 +632,9 @@ function PropTrackMarketMetrics(string $suburb, string $state, string $postcode)
         'end_date' => $currentEnd->format('Y-m-d'),
     ];
 
+    // Merge the data
+    $merged_data = [];
+
     function reorganizeData2($data, $key)
     {
         $result = [];
@@ -673,8 +683,6 @@ function PropTrackMarketMetrics(string $suburb, string $state, string $postcode)
         $median_rental_transaction_volume = reorganizeData2($client->getHistoricMarketData('rent', 'rental-transaction-volume', $params), 'median_rental_transaction_volume');
         $median_rental_yield = reorganizeData2($client->getHistoricMarketData('rent', 'median-rental-yield', $params), 'median_rental_yield');
 
-        // Merge the data
-        $merged_data = [];
         foreach ([$median_sale_price, $median_sale_transaction_volume, $median_rental_price, $median_rental_transaction_volume, $median_rental_yield] as $data) {
             foreach ($data as $bedrooms => $propertyTypes) {
                 foreach ($propertyTypes as $propertyType => $values) {
@@ -747,6 +755,55 @@ function PropTrackCalculateDrivingDistance($startLat, $startLon, $endLat, $endLo
     }
 
     return false;
+}
+
+function PropTrackSurroundingSuburbs(string $suburb, string $state, string $postcode): array
+{
+    $url = 'https://nominatim.openstreetmap.org/search?city=' . urlencode($suburb) . '&state=' . urlencode($state) . '&postalcode=' . urlencode($postcode) . '&format=json&addressdetails=1';
+
+    $opts = [
+        'http' => [
+            'header' => "User-Agent: MyApp/1.0\r\n",
+        ],
+    ];
+
+    $context = stream_context_create($opts);
+    $response = file_get_contents($url, false, $context);
+    $data = json_decode($response, true);
+
+    if (empty($data)) {
+        return [];
+    }
+
+    $lat = $data[0]['lat'];
+    $lon = $data[0]['lon'];
+
+    $overpassUrl = 'https://overpass-api.de/api/interpreter';
+    $query = '[out:json];(node["place"="suburb"](around:5000,' . $lat . ',' . $lon . '););out body;';
+
+    $opts = [
+        'http' => [
+            'method' => 'POST',
+            'header' => "Content-Type: application/x-www-form-urlencoded\r\nUser-Agent: MyApp/1.0\r\n",
+            'content' => http_build_query(['data' => $query]),
+        ],
+    ];
+
+    $context = stream_context_create($opts);
+    $response = file_get_contents($overpassUrl, false, $context);
+    $data = json_decode($response, true);
+
+    $surroundingSuburbs = [];
+
+    if (isset($data['elements'])) {
+        foreach ($data['elements'] as $element) {
+            if (isset($element['tags']['name'])) {
+                $surroundingSuburbs[] = $element['tags']['name'];
+            }
+        }
+    }
+
+    return $surroundingSuburbs;
 }
 
 // Helper function to get full state name from input
