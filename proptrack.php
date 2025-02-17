@@ -41,7 +41,10 @@ function deactivate_proptrack()
 register_activation_hook(__FILE__, 'activate_proptrack');
 register_deactivation_hook(__FILE__, 'deactivate_proptrack');
 
+require plugin_dir_path(__FILE__) . 'includes/class-boundary-fetcher.php';
 require plugin_dir_path(__FILE__) . 'includes/admin-options.php';
 require plugin_dir_path(__FILE__) . 'includes/HelperFunctions.php';
+require plugin_dir_path(__FILE__) . 'includes/cli-commands.php';
+require plugin_dir_path(__FILE__) . 'includes/custom-posts-taxonomies.php';
 
 require plugin_dir_path(__FILE__) . 'src/Shortcodes.php';

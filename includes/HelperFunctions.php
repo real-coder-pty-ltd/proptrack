@@ -748,3 +748,71 @@ function PropTrackCalculateDrivingDistance($startLat, $startLon, $endLat, $endLo
 
     return false;
 }
+
+// Helper function to get full state name from input
+function proptrack_get_full_state_name($input)
+{
+    $states = [
+        'NSW' => 'New South Wales',
+        'QLD' => 'Queensland',
+        'SA' => 'South Australia',
+        'TAS' => 'Tasmania',
+        'VIC' => 'Victoria',
+        'WA' => 'Western Australia',
+        'ACT' => 'Australian Capital Territory',
+        'NT' => 'Northern Territory',
+        'New South Wales' => 'New South Wales',
+        'Queensland' => 'Queensland',
+        'South Australia' => 'South Australia',
+        'Tasmania' => 'Tasmania',
+        'Victoria' => 'Victoria',
+        'Western Australia' => 'Western Australia',
+        'Australian Capital Territory' => 'Australian Capital Territory',
+        'Northern Territory' => 'Northern Territory',
+    ];
+
+    $input_upper = strtoupper($input);
+    $input_ucwords = ucwords(strtolower($input));
+
+    if (isset($states[$input_upper])) {
+        return $states[$input_upper];
+    } elseif (isset($states[$input_ucwords])) {
+        return $states[$input_ucwords];
+    }
+
+    return null;
+}
+
+// Helper function to get state abbreviation from input
+function proptrack_get_state_abbreviation($input)
+{
+    $states = [
+        'NSW' => 'NSW',
+        'QLD' => 'QLD',
+        'SA' => 'SA',
+        'TAS' => 'TAS',
+        'VIC' => 'VIC',
+        'WA' => 'WA',
+        'ACT' => 'ACT',
+        'NT' => 'NT',
+        'New South Wales' => 'NSW',
+        'Queensland' => 'QLD',
+        'South Australia' => 'SA',
+        'Tasmania' => 'TAS',
+        'Victoria' => 'VIC',
+        'Western Australia' => 'WA',
+        'Australian Capital Territory' => 'ACT',
+        'Northern Territory' => 'NT',
+    ];
+
+    $input_upper = strtoupper($input);
+    $input_ucwords = ucwords(strtolower($input));
+
+    if (isset($states[$input_upper])) {
+        return $states[$input_upper];
+    } elseif (isset($states[$input_ucwords])) {
+        return $states[$input_ucwords];
+    }
+
+    return null;
+}
