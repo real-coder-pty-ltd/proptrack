@@ -166,14 +166,14 @@ function PropTrackSuburbDescription(string $suburb, string $state, string $postc
     $rentalValue = $client->getHistoricMarketData('rent', 'median-rental-price', $params);
 
     // Average house rental amount per week
-    $rent_house_year = $rentalValue[0]['dateRanges'][0]['metricValues'];
-    $rent_house_year = end($rent_house_year)['value'];
+    $rent_house_year = $rentalValue[0]['dateRanges'][0]['metricValues'] ?? [];
+    $rent_house_year = end($rent_house_year)['value'] ?? 0;
     $rent_house_year = '$' . number_format($rent_house_year, 0, '.', ',');
 
     // Average unit rental amount per week
-    $rent_unit_year = $rentalValue[1]['dateRanges'][0]['metricValues'];
+    $rent_unit_year = $rentalValue[1]['dateRanges'][0]['metricValues'] ?? [];
     if (isset($rent_unit_year) && is_array($rent_unit_year)) {
-        $rent_unit_year = end($rent_unit_year)['value'];
+        $rent_unit_year = end($rent_unit_year)['value'] ?? 0;
         $rent_unit_year = '$' . number_format($rent_unit_year, 0, '.', ',');
     } else {
         $rent_unit_year = '';
@@ -201,8 +201,8 @@ function PropTrackSuburbDescription(string $suburb, string $state, string $postc
     }
 
     // Buy
-    $buy_last_month_supply_house = last(last($buy[0]['dateRanges'])['metricValues'])['supply'];
-    $buy_last_month_supply_unit = last(last($buy[1]['dateRanges'])['metricValues'])['supply'];
+    $buy_last_month_supply_house = isset($buy[0]['dateRanges']) ? last(last($buy[0]['dateRanges'])['metricValues'])['supply'] ?? 0 : 0;
+    $buy_last_month_supply_unit = isset($buy[1]['dateRanges']) ? last(last($buy[1]['dateRanges'])['metricValues'])['supply'] ?? 0 : 0;
     $buy_last_month_supply_total = $buy_last_month_supply_house + $buy_last_month_supply_unit;
 
     // Historic Sale Data
@@ -223,8 +223,8 @@ function PropTrackSuburbDescription(string $suburb, string $state, string $postc
     }
 
     // Median Price
-    $medianHousePrice = (int) $historicSaleData[0]['dateRanges'][0]['metricValues'][0]['value'];
-    $medianUnitPrice = (int) $historicSaleData[1]['dateRanges'][0]['metricValues'][0]['value'];
+    $medianHousePrice = isset($historicSaleData[0]['dateRanges'][0]['metricValues'][0]['value']) ? (int) $historicSaleData[0]['dateRanges'][0]['metricValues'][0]['value'] : 0;
+    $medianUnitPrice = isset($historicSaleData[1]['dateRanges'][0]['metricValues'][0]['value']) ? (int) $historicSaleData[1]['dateRanges'][0]['metricValues'][0]['value'] : 0;
 
     $medianHousePrice = '$' . number_format($medianHousePrice, 0, '.', ',');
     $medianUnitPrice = '$' . number_format($medianUnitPrice, 0, '.', ',');
@@ -270,23 +270,30 @@ function PropTrackSuburbDescription(string $suburb, string $state, string $postc
         return 'Error fetching historic sale data: ' . $e->getMessage();
     }
 
-    $sales_house_average_this_year = $historicSaleDataThisYear[0]['dateRanges'][0]['metricValues'];
-    $sales_house_average_this_year = end($sales_house_average_this_year)['value'];
+    $sales_house_average_this_year = isset($historicSaleDataThisYear[0]['dateRanges'][0]['metricValues']) ? $historicSaleDataThisYear[0]['dateRanges'][0]['metricValues'] : [];
+    $sales_house_average_this_year_value = end($sales_house_average_this_year);
+    $sales_house_average_this_year = $sales_house_average_this_year_value !== false ? $sales_house_average_this_year_value['value'] : 0;
 
-    $sales_house_average_last_year = $historicSaleDataLastYear[0]['dateRanges'][0]['metricValues'];
-    $sales_house_average_last_year = end($sales_house_average_last_year)['value'];
+    $sales_house_average_last_year = isset($historicSaleDataLastYear[0]['dateRanges'][0]['metricValues']) ? $historicSaleDataLastYear[0]['dateRanges'][0]['metricValues'] : [];
+    $sales_house_average_last_year_value = end($sales_house_average_last_year);
+    $sales_house_average_last_year = $sales_house_average_last_year_value !== false ? $sales_house_average_last_year_value['value'] : 0;
 
-    $growthRate = ($sales_house_average_this_year - $sales_house_average_last_year) / $sales_house_average_last_year * 100;
-
+    $growthRate = 0;
+    if ($sales_house_average_last_year != 0) {
+        $growthRate = ($sales_house_average_this_year - $sales_house_average_last_year) / $sales_house_average_last_year * 100;
+    }
     $growthRate = number_format($growthRate, 2, '.', '') . '%';
 
-    $sales_unit_average_this_year = $historicSaleDataThisYear[1]['dateRanges'][0]['metricValues'];
-    $sales_unit_average_this_year = end($sales_unit_average_this_year)['value'];
+    $sales_unit_average_this_year = $historicSaleDataThisYear[1]['dateRanges'][0]['metricValues'] ?? [];
+    $sales_unit_average_this_year = end($sales_unit_average_this_year)['value'] ?? 0;
 
-    $sales_unit_average_last_year = $historicSaleDataLastYear[1]['dateRanges'][0]['metricValues'];
-    $sales_unit_average_last_year = end($sales_unit_average_last_year)['value'];
+    $sales_unit_average_last_year = $historicSaleDataLastYear[1]['dateRanges'][0]['metricValues'] ?? [];
+    $sales_unit_average_last_year = end($sales_unit_average_last_year)['value'] ?? 0;
 
-    $unitGrowthRate = ($sales_unit_average_this_year - $sales_unit_average_last_year) / $sales_unit_average_last_year * 100;
+    $unitGrowthRate = 0;
+    if ($sales_unit_average_last_year != 0) {
+        $unitGrowthRate = ($sales_unit_average_this_year - $sales_unit_average_last_year) / $sales_unit_average_last_year * 100;
+    }
 
     $unitGrowthRate = number_format($unitGrowthRate, 2, '.', '') . '%';
 

@@ -50,7 +50,7 @@ class BoundaryFetcher
 
     public function getLat()
     {
-        if ($this->data[0]['bounds']['minlat'] === null || $this->data[0]['bounds']['maxlat'] === null) {
+        if (! isset($this->data[0]['bounds']['minlat']) || ! isset($this->data[0]['bounds']['maxlat']) || $this->data[0]['bounds']['minlat'] === null || $this->data[0]['bounds']['maxlat'] === null) {
             return null;
         }
 
@@ -66,7 +66,7 @@ class BoundaryFetcher
 
     public function getLong()
     {
-        if ($this->data[0]['bounds']['minlon'] === null || $this->data[0]['bounds']['maxlon'] === null) {
+        if (! isset($this->data[0]['bounds']['minlon']) || ! isset($this->data[0]['bounds']['maxlon']) || $this->data[0]['bounds']['minlon'] === null || $this->data[0]['bounds']['maxlon'] === null) {
             return null;
         }
 

@@ -41,7 +41,7 @@ class Boundary_Fetcher
 
     public function getLat()
     {
-        if ($this->data[0]['bounds']['minlat'] === null || $this->data[0]['bounds']['maxlat'] === null) {
+        if (! isset($this->data[0]['bounds']['minlat']) || ! isset($this->data[0]['bounds']['maxlat'])) {
             return null;
         }
 
@@ -55,7 +55,7 @@ class Boundary_Fetcher
 
     public function getLong()
     {
-        if ($this->data[0]['bounds']['minlon'] === null || $this->data[0]['bounds']['maxlon'] === null) {
+        if (! isset($this->data[0]['bounds']['minlon']) || ! isset($this->data[0]['bounds']['maxlon'])) {
             return null;
         }
 
@@ -162,6 +162,7 @@ EOT;
         while (! empty($segments)) {
             if ($iterationCount++ >= $maxIterations) {
                 error_log('Class Boundary_Fetcher: stitchPolygons() | Max iterations reached, possible infinite loop.');
+
                 return;
             }
 
